@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', main, false);
 
 var changed = false;
 
+function showButton(){
+	new Insertion.Before($$('div#tag_list ul strong')[0], '<input type="submit" value="submit" onclick="submit()"><br><br>');
+}
+
 function main(){
   try {
 	var ad = document.querySelectorAll('center div[id*="adbox"]')[0].parentNode;
@@ -70,6 +74,7 @@ function addTag(that){
 	contents.push(' <a href="#" class="aDelete" onclick="exclude(this)">[-]</a>');
 	span.innerHTML = contents.join(' ');
 	$('tags').value+=' '+tag;
+	showButton();
 }
 
 function addEdit(that){ 
@@ -94,12 +99,15 @@ function addEdit(that){
 		<span style="color: #a0a0a0;">\
 			<a href="#" class="aEdit" onclick="togglEdit(this)" style="display:none" >[/]</a>\
 			<a href="index.php?page=post&s=list&tags=[replace]" style="display:none" >[replace]</a>\
-			<input placeholder="add tag" type="text" value="" onkeydown="if (event.keyCode == 13) addEdit(this.up(\'li\'));">\
+			<input autofocus="true" class="newTag" placeholder="add tag" type="text" value="" onkeydown="if (event.keyCode == 13) addEdit(this.up(\'li\'));">\
 			<a href="#" class="aDelete" onclick="exclude(this)" style="display:none" >[-]</a>\
 		</span>\
 		<br><br>\
 	</li>'
 	);	
+	if (input)
+		showButton();
+	$$('.newTag').last().focus();
 }
 
 function exclude(that){
@@ -107,6 +115,7 @@ function exclude(that){
 	var tag = li.down('a',1).textContent.replace(/\s+/,'_');
 	li.parentNode.removeChild(li);
 	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
+	showButton();
 }
 
 function applyEdit(that){
@@ -122,6 +131,8 @@ function applyEdit(that){
 	span.down('input').hide();
 	span.down('a',1).show();	
 	$('tags').value = $('tags').value.split(/\s+/).without(oldTag).join(' ')+' '+tag;
+	if (oldTag != tag)
+		showButton();
 }
 
 function togglEdit(that){
