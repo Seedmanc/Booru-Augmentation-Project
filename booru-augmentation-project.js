@@ -3,7 +3,7 @@
 // @description	Enhance your basic booru experience
 // @version	1.0
 // @author		Seedmanc
-// @include	http://*.booru.org/index.php?page=post*
+// @include	http://*.booru.org/index.php?page=post&s=view*
 // @grant 		none 
 // @run-at		document-body
 // @noframes
@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', main, false);
 var changed = false;
 
 function showButton(){
-	new Insertion.Before($$('div#tag_list ul strong')[0], '<input type="submit" value="submit" onclick="submit()"><br><br>');
+	if ($('mySubmit'))
+		return;
+	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="mySubmit" type="submit" value="submit" onclick="submit()"><br><br>');
 }
 
 function main(){
@@ -24,6 +26,10 @@ function main(){
 	var ad = document.querySelectorAll('#right-col div[id*="adbox"]')[0].parentNode;
 	ad.parentNode.removeChild(ad);
   } catch(any){};
+  
+  new Insertion.Bottom($$('head')[0],'<style>.aEdit{font-size:smaller;background-color:#FFFF88;}\
+	.aDelete{font-size:smaller;background-color:#FFcccc;}\
+	.aAdd{font-size:smaller;background-color:#c0FFc0;}</style>');
 
 	var taglist = $$('div#tag_list li a');
 	taglist.each( function(tagli){
@@ -99,15 +105,16 @@ function addEdit(that){
 		<span style="color: #a0a0a0;">\
 			<a href="#" class="aEdit" onclick="togglEdit(this)" style="display:none" >[/]</a>\
 			<a href="index.php?page=post&s=list&tags=[replace]" style="display:none" >[replace]</a>\
-			<input autofocus="true" class="newTag" placeholder="add tag" type="text" value="" onkeydown="if (event.keyCode == 13) addEdit(this.up(\'li\'));">\
+			<input class="newTag" placeholder="add tag" type="text" value="" onkeydown="if (event.keyCode == 13) addEdit(this.up(\'li\'));">\
 			<a href="#" class="aDelete" onclick="exclude(this)" style="display:none" >[-]</a>\
 		</span>\
 		<br><br>\
 	</li>'
 	);	
-	if (input)
+	if (input) {
 		showButton();
-	$$('.newTag').last().focus();
+		$$('.newTag').last().focus();
+	}
 }
 
 function exclude(that){
