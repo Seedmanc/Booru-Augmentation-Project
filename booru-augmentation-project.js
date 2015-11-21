@@ -3,7 +3,7 @@
 // @description	Enhance your basic booru experience
 // @version	1.0
 // @author		Seedmanc
-// @include	http://*.booru.org/index.php?page=post&s=view*
+// @include	http://*.booru.org/*index.php?page=post&s=view*
 // @grant 		none 
 // @run-at		document-body
 // @noframes
@@ -19,17 +19,32 @@ function showButton(){
 	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="mySubmit" type="submit" value="submit" onclick="submit()"><br><br>');
 }
 
+function submit(){
+
+	new Insertion.Before($('mySubmit'), '<img id="spinner" src="http://i.forbesimg.com/assets/img/loading_spinners/16px_on_transparent.gif"><br><br>');
+	$('mySubmit').hide();
+	$('edit_form').request({
+		onComplete: function(){ $('spinner').parentNode.removeChild($('spinner')); $('mySubmit').parentNode.removeChild($('mySubmit'));},
+		onFailure:	function(){ $('spinner').parentNode.removeChild($('spinner')); $('mySubmit').show();}
+	});
+}
+
 function main(){
   try {
-	var ad = document.querySelectorAll('center div[id*="adbox"]')[0].parentNode;
-	ad.parentNode.removeChild(ad);
-	var ad = document.querySelectorAll('#right-col div[id*="adbox"]')[0].parentNode;
-	ad.parentNode.removeChild(ad);
+	var ad = document.querySelectorAll('center div[id*="adbox"]')[0];
+	if (ad)
+		ad.parentNode.parentNode.removeChild(ad.parentNode);
+	var ad = document.querySelectorAll('#right-col div[id*="adbox"]')[0];
+	if (ad)
+		ad.parentNode.parentNode.removeChild(ad.parentNode);
+	var ad = $$('center a[href*="patreon"]')[0];
+	if (ad)
+		ad.parentNode.parentNode.removeChild(ad.parentNode);	
   } catch(any){};
   
-  new Insertion.Bottom($$('head')[0],'<style>.aEdit{font-size:smaller;background-color:#FFFF88;}\
-	.aDelete{font-size:smaller;background-color:#FFcccc;}\
-	.aAdd{font-size:smaller;background-color:#c0FFc0;}</style>');
+  new Insertion.Bottom($$('head')[0],'<style>.aEdit{font-size:smaller;background-color:rgba(0, 255, 0, 0.25);}\
+	.aDelete{font-size:smaller;background-color:rgba(255,0, 0, 0.2);}\
+	.aAdd{font-size:smaller;background-color:rgba(255, 255, 0, 0.33);}</style>');
 
 	var taglist = $$('div#tag_list li a');
 	taglist.each( function(tagli){
@@ -45,12 +60,12 @@ function main(){
 	
 	var br1 = $$('div#tag_list br')[0];
 	
-	var customTags = (readCookie("tags")||'').split(/[, ]|%20+/g).sort();
+	var customTags = (readCookie("tags")||'').split(/[, ]|%20+/g).sort().reverse();
 	var currentTags = $('tags').value.split(/\s+/);
 	currentTags.each(function(tag){
 		customTags = customTags.without(tag);
 	})
-	if (customTags.length){
+	if ((customTags.length) && (readCookie('tags'))){
 		
 		customTags.each(function(tag){
 			var aAdd = '';    
@@ -61,8 +76,10 @@ function main(){
 				'</span>\
 			</li>');
 		});
+		new Insertion.After($$('a.aAdd').last().up('li'),'<br>');
 	}
-	new Insertion.After($$('a.aAdd').last().up('li'),'<br>');
+
+	
 	addEdit($$('div#tag_list strong')[0].previous());
 	
 }
