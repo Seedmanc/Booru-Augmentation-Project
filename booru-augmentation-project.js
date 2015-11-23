@@ -11,56 +11,6 @@
 
 document.addEventListener('DOMContentLoaded', main, false);
 
-function showButton(){
-	if ($('mySubmit'))
-		return;
-	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="mySubmit" type="submit" value="submit" onclick="submit()"><br><br>');
-	$('mySubmit').onclick = function(){submit();};
-}
-
-function submit(){
-
-	new Insertion.Before($('mySubmit'), '<img id="spinner" src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
-	$('mySubmit').hide();
-	$('edit_form').request({
-		onComplete: function(){ 
-			var br = $$('#tag_list ul strong')[0].previous('br');
-			br.parentNode.removeChild(br);
-			$('spinner').parentNode.removeChild($('spinner')); $('mySubmit').parentNode.removeChild($('mySubmit'));
-			var taglist = $$('div#tag_list li a.aDelete');
-			var lis = {};
-			taglist.each(function(taglink){ 
-				lis[taglink.previous('a').textContent] = taglink.up('li').innerHTML.replace(/<br\/?>/gim,'');
-			});
-			taglist.each(function(taglink){ 
-				taglink.up('li').parentNode.removeChild(taglink.up('li'));
-			});
-			var sorted = Object.keys(lis).sort().reverse();
-			sorted.each(function(tag){
-				new Insertion.Top($$('#tag_list ul')[0],'<li>'+lis[tag]+'</li>');
-			});
-			$$('.aEdit').each(function(el){
-				el.onclick = function(){togglEdit(this);}
-			});
-			$$('.aDelete').each(function(el){
-				el.onclick = function(){exclude(this);}
-			});
-			$$('input.editField').each(function(el){
-				el.onblur = function(){applyEdit(this);}
-				el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
-			});			
-		},
-		onFailure:	function(){ $('spinner').parentNode.removeChild($('spinner')); $('mySubmit').show();}
-	});
-}
-
-function toggleFitIn(that){
-	if (that.getAttribute('style')) 
-		that.setAttribute('style','') 
-	else 
-		that.setAttribute('style','max-width:20000px !important;');
-}
-
 function main(){
   try {
 	var ad = document.querySelectorAll('center div[id*="adbox"]')[0];
@@ -72,20 +22,21 @@ function main(){
 	var ad = $$('center a[href*="patreon"]')[0];
 	if (ad)
 		ad.parentNode.parentNode.removeChild(ad.parentNode);	
-  } catch(any){};
+  }catch(any){};
 
-  if (!~document.location.href.indexOf('&s=view'))
-	return;
+	if (!~document.location.href.indexOf('&s=view'))
+		return;
   
-  new Insertion.Bottom($$('head')[0],'<style>.aEdit{font-size:smaller;background-color:rgba(255, 255, 0, 0.33);}\
-	.aDelete{font-size:smaller;background-color:rgba(255,0, 0, 0.2);}\
-	.aAdd{font-size:smaller;background-color:rgba(0, 255, 0, 0.25);}\
-	#image{max-width:1480px;margin-right:0 !important;}\
-	.fitIn{max-width:auto !important;}</style>');
+	new Insertion.Bottom($$('head')[0],'<style>\
+		.aEdit{font-size:smaller; background-color:rgba(255, 255, 0, 0.33);}\
+		.aDelete{font-size:smaller; background-color:rgba(255,0, 0, 0.2);}\
+		.aAdd {font-size:smaller; background-color:rgba(0, 255, 0, 0.25);}\
+		#image{max-width:1480px; margin-right:0 !important;}\
+		.fitIn{max-width:auto !important;}\
+	</style>');
 	
 	$('image').setAttribute('style','');
-	$('image').onclick=function(){toggleFitIn(this);};
-
+	$('image').onclick = function(){toggleFitIn(this);};
 
 	var taglist = $$('div#tag_list li a');
 	taglist.each( function(tagli){
@@ -138,6 +89,56 @@ function main(){
 	addEdit($$('div#tag_list strong')[0].previous());
 	new Insertion.Before($$('#tag_list ul strong')[0],'<br>');
   
+}
+
+function showButton(){
+	if ($('mySubmit'))
+		return;
+	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="mySubmit" type="submit" value="submit" onclick="submit()"><br><br>');
+	$('mySubmit').onclick = function(){submit();};
+}
+
+function submit(){
+
+	new Insertion.Before($('mySubmit'), '<img id="spinner" 	src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	$('mySubmit').hide();
+	$('edit_form').request({
+		onComplete: function(){ 
+			var br = $$('#tag_list ul strong')[0].previous('br');
+			br.parentNode.removeChild(br);
+			$('spinner').parentNode.removeChild($('spinner')); $('mySubmit').parentNode.removeChild($('mySubmit'));
+			var taglist = $$('div#tag_list li a.aDelete');
+			var lis = {};
+			taglist.each(function(taglink){ 
+				lis[taglink.previous('a').textContent] = taglink.up('li').innerHTML.replace(/<br\/?>/gim,'');
+			});
+			taglist.each(function(taglink){ 
+				taglink.up('li').parentNode.removeChild(taglink.up('li'));
+			});
+			var sorted = Object.keys(lis).sort().reverse();
+			sorted.each(function(tag){
+				new Insertion.Top($$('#tag_list ul')[0],'<li>'+lis[tag]+'</li>');
+			});
+			$$('.aEdit').each(function(el){
+				el.onclick = function(){togglEdit(this);}
+			});
+			$$('.aDelete').each(function(el){
+				el.onclick = function(){exclude(this);}
+			});
+			$$('input.editField').each(function(el){
+				el.onblur = function(){applyEdit(this);}
+				el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
+			});			
+		},
+		onFailure:	function(){ $('spinner').parentNode.removeChild($('spinner')); $('mySubmit').show();}
+	});
+}
+
+function toggleFitIn(that){
+	if (that.getAttribute('style')) 
+		that.setAttribute('style','') 
+	else 
+		that.setAttribute('style','max-width:20000px !important;');
 }
 
 function addTag(that){
