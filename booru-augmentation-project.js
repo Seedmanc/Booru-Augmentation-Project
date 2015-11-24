@@ -70,7 +70,7 @@ function inserTag(tag, where){
 	var aDelete = ' <a href="#'+tag.text+'" class="aDelete" style="display:none;">[-]</a>';
 	var editField = '<input placeholder="add tag" class="editField" type="text" value="'+(tag.text||'')+'" style="display:none;">';
 	
-	var tagLink = ' <a href="index.php?page=post&s=list&tags=%20replace%20" style="">%20replace%20</a> ';
+	var tagLink = ' <a href="index.php?page=post&s=list&tags=" style=""></a> ';
 	if (tag.text && !tag.num) {		//custom tag
 		aAdd = aAdd.replace('style="display:none;"', 'style=""');
 		tagLink = '<span class="customTag">'+tag.text+'</span>';
@@ -78,7 +78,7 @@ function inserTag(tag, where){
 		tagLink   = tagLink.replace('style=""','style="display:none;"'); 
 		editField = editField.replace('style="display:none;"','style=""');
 	} else {						//existing tag
-		tagLink = tagLink.replace('=%20replace%20', '='+tag.text).replace('%20replace%20', tag.text.replace(/_/g,' '));	
+		tagLink = tagLink.replace('&tags=', '&tags='+tag.text).replace('></', '>'+tag.text.replace(/_/g,' ')+'</');	
 		aEdit   = aEdit.replace('style="display:none;"', 'style=""');
 		aDelete = aDelete.replace('style="display:none;"', 'style=""');
 	}
@@ -92,8 +92,10 @@ function inserTag(tag, where){
 	if (tag.text) {
 		where.next().down('.editField').onblur = function(){applyEdit(this);}
 		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) this.blur();}
-	} else 
-		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) addEdit(this);}
+	} else {
+		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) applyEdit(this);}
+		where.next().down('.editField').id = 'newTag';
+	}
 	
 	if (tag.text && ~where.textContent.indexOf(tag.text.replace(/_/g,' ')))
 		where.parentNode.removeChild(where);
@@ -160,44 +162,34 @@ function addTag(that){
 	showButton();
 }
 
-function addEdit(that){ 
+function applyEdit(that){ 
 
 	var value = that.value.trim().replace(/\s+/g, '_');	
-	if (!value)
+	if (!value) {
+		if (that.id != 'newTag')
+			exclude(that);
 		return;
-
+	}
+	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g,'_')||'';
 	var link = that.previous('span > a');
-	link.href = link.href.replace('%20replace%20', value);
+	link.href = 'index.php?page=post&s=list&tags='+value;
 	link.textContent = value.replace(/_/g, ' ');
 	link.show();
 	that.hide();
-	that.onblur =  function(){applyEdit(this);};
+	that.onblur  = function(){applyEdit(this);};
 	that.onkeydown=function(){if (event.keyCode == 13) this.blur();} 
 	link.previous('.aEdit').show();
 	link.next('.aDelete').show();
-
-	$('tags').value += ' '+value;
-	showButton();		
-	inserTag({}, $('btnSubmit').previous('li'));
 	
-	$$('.editField').last().focus();
-}
-
-function applyEdit(that){
-	var span = that.parentNode;
-	var tag = that.value.trim();
-	if (!tag) {
-		exclude(that);
-		return;
-	};
-	var oldTag = that.previous('a').textContent.replace(/\s+/g,'_');
-	that.previous('a').textContent = tag.replace(/_/g,' ');
-	that.previous('a').href = that.previous('a').href.replace(/&tags=.+/, '&tags='+tag.replace(/\s+/g,'_'));
-	that.previous('a').show();	
-	that.hide();
-	$('tags').value = $('tags').value.split(/\s+/).without(oldTag).join(' ')+' '+tag.replace(/\s+/g,'_');
-	if (oldTag != tag)
-		showButton();
+	$('tags').value = ($('tags').value.replace(oldTag,'')+' '+value.replace(/\s+/g,'_')).replace(/\s+/g, ' ');
+	if (oldTag != value)
+		showButton();		
+	if (that.id == 'newTag'){
+		that.id = '';
+		inserTag({}, $('btnSubmit').previous('li'));	
+		$('newTag').focus();
+	}
+	that.placeholder = 'edit tag';
 }
 
 function exclude(that){
@@ -214,6 +206,6 @@ function togglEdit(that){
 	span.down('a.aEdit').next('a').hide();
 }
 
-//todo fix cookies + => %2520
-//todo merge add/apply edit
+//todo fix cookies + => %2520 
 //todo fix userlist
+//todo add recent tags
