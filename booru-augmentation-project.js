@@ -26,7 +26,10 @@ function main(){
 
 	if (!~document.location.href.indexOf('&s=view') || !(readCookie('user_id') && readCookie('pass_hash')))
 		return;
-  
+ 	
+	if ($('image').getWidth() > 1480)
+		$('note-container').setAttribute('style','cursor:pointer');
+		
 	new Insertion.Bottom($$('head')[0],'<style>\
 		.aEdit{font-size:smaller; background-color:rgba(255, 255, 0, 0.33);}\
 		.aDelete{font-size:smaller; background-color:rgba(255,0, 0, 0.2);}\
@@ -34,7 +37,7 @@ function main(){
 		#image{max-width:1480px; margin-right:0 !important;}\
 		.fitIn{max-width:auto !important;}\
 	</style>');
-	
+
 	$('image').setAttribute('style','');
 	$('image').onclick = function(){toggleFitIn(this);};
 
@@ -121,7 +124,7 @@ function mySubmit(){
 			var taglist = $$('div#tag_list li a.aDelete').findAll(function(el) { return el.visible(); });
 			var lis = {};
 			taglist.each(function(taglink){ 
-				lis[taglink.previous('a').textContent.trim()] = taglink.up('span').textContent.split(/\s+/).last()||'?';
+				lis[taglink.previous('a').textContent.trim()] = taglink.up('span').textContent.split(/\s+/).last()||' ';
 			});
 			taglist.each(function(taglink){ 
 				taglink.up('li').parentNode.removeChild(taglink.up('li'));
@@ -213,6 +216,4 @@ function togglEdit(that){
 
 //todo fix cookies + => %2520
 //todo merge add/apply edit
-//todo cursor toggleFitIn
-//todo add onFailure error indication
 //todo fix userlist
