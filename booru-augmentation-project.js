@@ -24,7 +24,7 @@ function main(){
 		ad.parentNode.parentNode.removeChild(ad.parentNode);	
   }catch(any){};
 
-	if (!~document.location.href.indexOf('&s=view'))
+	if (!~document.location.href.indexOf('&s=view') || !(readCookie('user_id') && readCookie('pass_hash')))
 		return;
   
 	new Insertion.Bottom($$('head')[0],'<style>\
@@ -40,26 +40,8 @@ function main(){
 
 	var taglist = $$('div#tag_list li a');
 	taglist.each( function(tagli){
-		var aEdit = '<a href="#" class="aEdit" onclick="togglEdit(this)">[/]</a> ';
-		var aDelete = ' <a href="#" class="aDelete" onclick="exclude(this)">[-]</a>';
-		var editField = '<input class="editField" type="text" value="'+tagli.textContent.replace(/\s+/g,'_')+'" style="display:none" onblur="applyEdit(this)" onkeydown="if (event.keyCode == 13) this.blur();">';
-		var span = tagli.parentNode;
-		var newSpan = span.innerHTML.split(/\s+/);
-		newSpan[0] = aEdit+editField; newSpan.splice(newSpan.length-1, 0, aDelete);
-		span.innerHTML = newSpan.join(' '); 
+		inserTag({text:tagli.textContent.trim().replace(/\s+/g,'_'), num:tagli.up('span').textContent.split(' ').last()}, tagli.up('li'))
 	});
-	
-	$$('.aEdit').each(function(el){
-		el.onclick = function(){togglEdit(this);}
-	});
-	$$('.aDelete').each(function(el){
-		el.onclick = function(){exclude(this);}
-	});
-	$$('input.editField').each(function(el){
-		el.onblur = function(){applyEdit(this);}
-		el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
-	});
-	
 	
 	var br1 = $$('div#tag_list br')[0];
 	
@@ -68,69 +50,91 @@ function main(){
 	currentTags.each(function(tag){
 		customTags = customTags.without(tag);
 	})
-	if ((customTags.length) && (readCookie('tags'))){
-		
+	if ((customTags.length) && (readCookie('tags'))){		
 		customTags.each(function(tag){
-			var aAdd = '';    
-			new Insertion.After(br1, '<li>\
-				<span style="color: #a0a0a0;">\
-					<a href="#" class="aAdd" onclick="addTag(this)">[+]</a> '+
-					tag+
-				'</span>\
-			</li>');
+			inserTag({text:tag}, br1);
 		});
 		new Insertion.After($$('a.aAdd').last().up('li'),'<br>');
 	}
 	
-	$$('.aAdd').each(function(el){
-		el.onclick = function(){addTag(this);}
-	});
+	inserTag({}, $$('div#tag_list strong')[0].previous()); 
+	new Insertion.Before($$('#tag_list ul strong')[0],'<br>');  
+}
+
+function inserTag(tag, where){
+	var aAdd = '<a href="#'+tag.text+'" class="aAdd" style="display:none;">[+]</a> ';;
+	var aEdit = '<a href="#'+tag.text+'" class="aEdit" style="display:none;">[/]</a> ';
+	var aDelete = ' <a href="#'+tag.text+'" class="aDelete" style="display:none;">[-]</a>';
+	var editField = '<input placeholder="add tag" class="editField" type="text" value="'+(tag.text||'')+'" style="display:none;">';
 	
-	addEdit($$('div#tag_list strong')[0].previous());
-	new Insertion.Before($$('#tag_list ul strong')[0],'<br>');
-  
+	var tagLink = ' <a href="index.php?page=post&s=list&tags=%20replace%20" style="">%20replace%20</a> ';
+	if (tag.text && !tag.num) {		//custom tag
+		aAdd = aAdd.replace('style="display:none;"', 'style=""');
+		tagLink = '<span class="customTag">'+tag.text+'</span>';
+	} else if (!tag.text) {			//new tag
+		tagLink   = tagLink.replace('style=""','style="display:none;"'); 
+		editField = editField.replace('style="display:none;"','style=""');
+	} else {						//existing tag
+		tagLink = tagLink.replace('=%20replace%20', '='+tag.text).replace('%20replace%20', tag.text.replace(/_/g,' '));	
+		aEdit   = aEdit.replace('style="display:none;"', 'style=""');
+		aDelete = aDelete.replace('style="display:none;"', 'style=""');
+	}
+		
+	var span = '<span style="color: #a0a0a0;">'+aAdd+aEdit+tagLink+editField+aDelete+' '+(tag.num||'')+'</span>';
+	new Insertion.After(where, '<li>'+span+'</li>');
+	
+	where.next().down('.aAdd').onclick = function(){addTag(this);}		
+	where.next().down('.aEdit').onclick = function(){togglEdit(this);}
+	where.next().down('.aDelete').onclick = function(){exclude(this);}	
+	if (tag.text) {
+		where.next().down('.editField').onblur = function(){applyEdit(this);}
+		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) this.blur();}
+	} else 
+		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) addEdit(this);}
+	
+	if (tag.text && ~where.textContent.indexOf(tag.text.replace(/_/g,' ')))
+		where.parentNode.removeChild(where);
 }
 
 function showButton(){
-	if ($('mySubmit'))
+	if ($('btnSubmit'))
 		return;
-	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="mySubmit" type="submit" value="submit" onclick="submit()"><br><br>');
-	$('mySubmit').onclick = function(){submit();};
+	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="btnSubmit" type="submit" value="submit"><br><br>');
+	$('btnSubmit').onclick = function(){mySubmit();};
 }
 
-function submit(){
-
-	new Insertion.Before($('mySubmit'), '<img id="spinner" 	src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
-	$('mySubmit').hide();
+function mySubmit(){
+	new Insertion.Before($('btnSubmit'), '<img id="spinner" 	src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	
+	$('btnSubmit').hide();
 	$('edit_form').request({
-		onComplete: function(){ 
+		onComplete: function(response){ 
+			if (~response.responseText.indexOf('ou are not logged in')) {
+				$('spinner').hide();
+				new Insertion.Before($$('div#tag_list ul strong')[0], '<p class="aDelete">You are not logged in</p>');
+				return;			
+			}		
 			var br = $$('#tag_list ul strong')[0].previous('br');
 			br.parentNode.removeChild(br);
-			$('spinner').parentNode.removeChild($('spinner')); $('mySubmit').parentNode.removeChild($('mySubmit'));
-			var taglist = $$('div#tag_list li a.aDelete');
+			$('spinner').parentNode.removeChild($('spinner')); $('btnSubmit').parentNode.removeChild($('btnSubmit'));
+			
+			var taglist = $$('div#tag_list li a.aDelete').findAll(function(el) { return el.visible(); });
 			var lis = {};
 			taglist.each(function(taglink){ 
-				lis[taglink.previous('a').textContent] = taglink.up('li').innerHTML.replace(/<br\/?>/gim,'');
+				lis[taglink.previous('a').textContent.trim()] = taglink.up('span').textContent.split(/\s+/).last()||'?';
 			});
 			taglist.each(function(taglink){ 
 				taglink.up('li').parentNode.removeChild(taglink.up('li'));
 			});
 			var sorted = Object.keys(lis).sort().reverse();
+			new Insertion.Top($$('#tag_list ul')[0],'<br>');	
 			sorted.each(function(tag){
-				new Insertion.Top($$('#tag_list ul')[0],'<li>'+lis[tag]+'</li>');
+				inserTag({text:tag,num:lis[tag]},$$('#tag_list ul br')[0]);
 			});
-			$$('.aEdit').each(function(el){
-				el.onclick = function(){togglEdit(this);}
-			});
-			$$('.aDelete').each(function(el){
-				el.onclick = function(){exclude(this);}
-			});
-			$$('input.editField').each(function(el){
-				el.onblur = function(){applyEdit(this);}
-				el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
-			});			
+			br = $$('#tag_list ul br')[0];
+			br.parentNode.removeChild(br);
 		},
-		onFailure:	function(){ $('spinner').parentNode.removeChild($('spinner')); $('mySubmit').show();}
+		onFailure:	function(){ $('spinner').parentNode.removeChild($('spinner')); $('btnSubmit').show().disable().value="error";}
 	});
 }
 
@@ -142,106 +146,73 @@ function toggleFitIn(that){
 }
 
 function addTag(that){
-	var li = that.up('li');
-	var tag = li.textContent.replace('[+]','').trim();
-	that.update('[/]');
-	that.setAttribute('onclick','togglEdit(this)');
-	that.setAttribute('class','aEdit');
-	var span = li.down('span');
-	var contents = span.innerHTML.trim().split('</a>');
-	contents[0]+= '</a>';
-	contents[1] = '<a href="index.php?page=post&s=list&tags='+tag+'">'+tag.replace(/_/g,' ')+'</a>';	contents.push('<input class="editField"  type="text" value="'+tag+'" style="display:none" onblur="applyEdit(this)" onkeydown="if (event.keyCode == 13) this.blur();">');
-	contents.push(' <a href="#" class="aDelete" onclick="exclude(this)">[-]</a>');
-	span.innerHTML = contents.join(' ');
-	$('tags').value+=' '+tag;
+	var tag = that.next('span.customTag').textContent.trim();
+	that.hide();
+	that.next('.aEdit').show();
+	that.next('.aDelete').show();
+	
+	that.next('span.customTag').replace('<a href="index.php?page=post&s=list&tags='+tag.replace(/\s+/g,'_')+'">'+tag+'</a>');
+	
+	$('tags').value+= ' '+tag.replace(/\s+/g,'_');
 	showButton();
-	$$('input.editField').each(function(el){
-		el.onblur = function(){applyEdit(this);}
-		el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
-	});	
-	$$('.aDelete').each(function(el){
-		el.onclick = function(){exclude(this);}
-	});	
-	$$('.aEdit').each(function(el){
-		el.onclick = function(){togglEdit(this);}
-	});
 }
 
 function addEdit(that){ 
-	
-	var input = that.down('input');
-	if (input) {
-		var value = input.value.trim();
-		if (!value)
-			return;
-		var a = that.down('a', 1);
-		a.href= a.href.replace('[replace]', value.replace(/\s+/g, '_'));
-		a.update(value.replace(/_/g,' '));
-		input.hide();
-		a.show();
-		that.down('a').show()
-		that.down('a', 2).show().setAttribute('class','aDelete');
-		$$('.aDelete').each(function(el){
-			el.onclick = function(){exclude(this);}
-		});	
-		input.setAttribute('onblur', "applyEdit(this)");
-		input.setAttribute('onkeydown', "if (event.keyCode == 13) this.blur();");		
-		input.className += ' editField';
-		$$('input.editField').each(function(el){
-			el.onblur = function(){applyEdit(this);}
-			el.onkeydown = function(){if (event.keyCode == 13) this.blur();}
-		});			
-		$('tags').value += ' '+value.replace(/\s+/g,'_');
-	} 
-	new Insertion.After(that, '<li>\
-		<span style="color: #a0a0a0;">\
-			<a href="#" class="aEdit" onclick="togglEdit(this)" style="display:none" >[/]</a>\
-			<a href="index.php?page=post&s=list&tags=[replace]" style="display:none" >[replace]</a>\
-			<input class="newTag" placeholder="add tag" type="text" value="" onkeydown="if (event.keyCode == 13) addEdit(this.up(\'li\'));">\
-			<a href="#" onclick="exclude(this)" style="display:none" >[-]</a>\
-		</span>\
-		<br>\
-	</li>'
-	);	
-	$$('.aEdit').each(function(el){
-		el.onclick = function(){togglEdit(this);}
-	});
-	$$('.newTag')[0].onkeydown = function(){if (event.keyCode == 13) addEdit(this.up('li'));};
-	if (input) {
-		showButton();
-		$$('.newTag').last().focus();
-	}
-}
 
-function exclude(that){
-	var li = that.up('li');
-	var tag = li.down('a',1).textContent.replace(/\s+/g,'_');
-	li.parentNode.removeChild(li);
-	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
-	showButton();
+	var value = that.value.trim().replace(/\s+/g, '_');	
+	if (!value)
+		return;
+
+	var link = that.previous('span > a');
+	link.href = link.href.replace('%20replace%20', value);
+	link.textContent = value.replace(/_/g, ' ');
+	link.show();
+	that.hide();
+	that.onblur =  function(){applyEdit(this);};
+	that.onkeydown=function(){if (event.keyCode == 13) this.blur();} 
+	link.previous('.aEdit').show();
+	link.next('.aDelete').show();
+
+	$('tags').value += ' '+value;
+	showButton();		
+	inserTag({}, $('btnSubmit').previous('li'));
+	
+	$$('.editField').last().focus();
 }
 
 function applyEdit(that){
 	var span = that.parentNode;
 	var tag = that.value.trim();
-	var oldTag = that.up('li').down('a',1).textContent.replace(/\s+/g,'_');
 	if (!tag) {
 		exclude(that);
 		return;
 	};
-	span.down('a',1).textContent = tag.replace(/_/g,' ');
-	span.down('a',1).href = span.down('a',1).href.replace(/&tags=.+/,'&tags='+tag.replace(/\s+/g,'_'));
-	span.down('input').hide();
-	span.down('a',1).show();	
-	$('tags').value = $('tags').value.split(/\s+/).without(oldTag).join(' ')+' '+tag;
+	var oldTag = that.previous('a').textContent.replace(/\s+/g,'_');
+	that.previous('a').textContent = tag.replace(/_/g,' ');
+	that.previous('a').href = that.previous('a').href.replace(/&tags=.+/, '&tags='+tag.replace(/\s+/g,'_'));
+	that.previous('a').show();	
+	that.hide();
+	$('tags').value = $('tags').value.split(/\s+/).without(oldTag).join(' ')+' '+tag.replace(/\s+/g,'_');
 	if (oldTag != tag)
 		showButton();
+}
+
+function exclude(that){
+	var li = that.up('li');
+	var tag = li.down('.aEdit').next('a').textContent.trim().replace(/\s+/g,'_');
+	li.parentNode.removeChild(li);
+	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
+	showButton();
 }
 
 function togglEdit(that){
 	var span = that.parentNode;
 	span.down('input').show().focus();
-	span.down('a',1).hide();
+	span.down('a.aEdit').next('a').hide();
 }
 
 //todo fix cookies + => %2520
+//todo merge add/apply edit
+//todo cursor toggleFitIn
+//todo add onFailure error indication
+//todo fix userlist
