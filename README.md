@@ -22,3 +22,5 @@ Improve readability, add user links and image title, remove unnecessary info.
 Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts and some other.
 
 You feedback is required, please go to [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
+
+Be sure to check out my other Booru-related userscript project - the [Mass Uploader](https://github.com/Seedmanc/Booru-mass-uploader)
