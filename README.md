@@ -1,4 +1,4 @@
-# Booru-Augmentation-Project
+# Booru Augmentation Project
 A userscript that improves usability of basic *.booru.org hosted sites.
 
 It's no secret that free accounts on booru.org offer very little convenience compared to well-developed boorus like Danbooru.  
@@ -21,4 +21,4 @@ Improve readability, add user links and image title, remove unnecessary info.
 
 Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts and some other.
 
-You feedback is required, please go to [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which functionnel I should add, what would you like to see.
+You feedback is required, please go to [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
