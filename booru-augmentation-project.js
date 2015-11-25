@@ -60,8 +60,38 @@ function main(){
 		new Insertion.After($$('a.aAdd').last().up('li'),'<br>');
 	}
 	
-	inserTag({}, $$('div#tag_list strong')[0].previous()); 
-	new Insertion.Before($$('#tag_list ul strong')[0],'<br>');  
+	var strong = $$('#tag_list ul strong')[0]	
+	
+	inserTag({}, strong.previous()); 
+	new Insertion.Before(strong,'<br>');  
+	strong.innerHTML = '<u>'+strong.innerHTML+'</u>';	
+	var pointer = strong.nextSibling;
+
+	while (pointer && pointer.tagName != 'li') {
+		if (pointer.nodeType === 3) {
+			var split = pointer.data.split(':');
+			if (split.length > 1) {
+				if (~split[0].indexOf('Score')){
+					pointer.parentNode.removeChild(pointer.previousSibling);
+					pointer.data = '';
+				} else {
+					if (~split[0].indexOf('By')) {
+						new Insertion.Before(pointer.nextSibling,'<a href="index.php?page=account_profile&uname='+split[1].trim()+'">'+split[1].trim()+'</a>');
+						pointer.data = split[0]+': ';
+						split[1] = ' ';
+					}
+					new Insertion.After(pointer.previousSibling,'<b>'+split[0]+'</b>');
+					split[0] = '';
+					pointer.data = split.join(':');
+				}
+			}
+		}  
+		if (!pointer.nextSibling || pointer.nextSibling.tagName == 'li') {
+			new Insertion.Before(pointer, '<b>Title:</b> '+$('title').value);
+			break;
+		}
+		pointer = pointer.nextSibling;
+	}
 }
 
 function inserTag(tag, where){
