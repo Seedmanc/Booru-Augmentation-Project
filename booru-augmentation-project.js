@@ -71,7 +71,7 @@ function main(){
 		if (pointer.nodeType === 3) {
 			var split = pointer.data.split(':');
 			if (split.length > 1) {
-				if (~split[0].indexOf('Score')){
+				if (~split[0].indexOf('Score') || (~split[0].indexOf('Source') && !$('source').value)){
 					pointer.parentNode.removeChild(pointer.previousSibling);
 					pointer.data = '';
 				} else {
@@ -86,7 +86,7 @@ function main(){
 				}
 			}
 		}  
-		if (!pointer.nextSibling || pointer.nextSibling.tagName == 'li') {
+		if ((!pointer.nextSibling || pointer.nextSibling.tagName == 'li')&& $('title').value) {
 			new Insertion.Before(pointer, '<b>Title:</b> '+$('title').value);
 			break;
 		}
@@ -108,7 +108,7 @@ function inserTag(tag, where){
 		tagLink   = tagLink.replace('style=""','style="display:none;"'); 
 		editField = editField.replace('style="display:none;"','style=""');
 	} else {						//existing tag
-		tagLink = tagLink.replace('&tags=', '&tags='+tag.text).replace('></', '>'+tag.text.replace(/_/g,' ')+'</');	
+		tagLink = tagLink.replace('&tags=', '&tags='+tag.text.replace(/\s+/g,'_')).replace('></', '>'+tag.text.replace(/_/g,' ')+'</');	
 		aEdit   = aEdit.replace('style="display:none;"', 'style=""');
 		aDelete = aDelete.replace('style="display:none;"', 'style=""');
 	}
