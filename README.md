@@ -11,13 +11,15 @@ It's no secret that free accounts on booru.org offer very little convenience com
 Allows you to quickly add, edit and remove tags with just a few clicks and without page reloading. No more scrolling to the bottom of the page to open the edit form, do everything directly in the tag list to the left.  
   ![pic](http://puu.sh/lwWff/d89ecf28d3.png)
   
+* Revamp Statistics area below the tag list (ready)
+
+Improve readability, add user links and image title, remove unnecessary info.
+  
+![screen](http://puu.sh/lyCVk/363400f0e5.png)
+
 * Drop-down select tag list for the search field (planned)
 
 Kinda like on Danbooru, but probably will only work for the first tag entered. 
-
-* Revamp Statistics area below the tag list (planned)
-
-Improve readability, add user links and image title, remove unnecessary info.
 
 Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts and some other.
 
