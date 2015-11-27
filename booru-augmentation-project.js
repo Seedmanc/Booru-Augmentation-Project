@@ -4,6 +4,8 @@
 // @version	1.0
 // @author		Seedmanc
 // @include	http://*.booru.org/*index.php?page=post*
+// @include	http://*.booru.org/help/*
+// @include	http://*.booru.org/*index.php?page=alias*
 // @grant 		none 
 // @run-at		document-body
 // @noframes
@@ -24,9 +26,31 @@ function main(){
 		ad.parentNode.parentNode.removeChild(ad.parentNode);	
   }catch(any){};
 
-	if (!~document.location.href.indexOf('&s=view') || !(readCookie('user_id') && readCookie('pass_hash')))
+	if (~document.location.href.indexOf('&s=view') && (readCookie('user_id') && readCookie('pass_hash')))
+		postPage()
+	else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post'))
+		listPage(); 	
+}
+
+function listPage(){
+	var paginator = $('paginator');
+	var pageLinks = $A(document.querySelectorAll('div#paginator > a:not([alt])'));
+	var current = paginator.down('b');
+	if ((paginator.immediateDescendants().indexOf(current)!=3) ||(current.textContent<6))
 		return;
- 	
+	var pid = ~document.location.href.indexOf('&pid=')?document.location.search.split('&').findAll(function(el){return ~el.indexOf('pid');})[0].replace('pid=',''):0;
+	for (var i=0; i<pageLinks.length; i++){ 
+		pageLinks[i].textContent = current.textContent - 4 + i;
+		pageLinks[i].href = pageLinks[i].href.replace(/&pid=\d+/gi, '&pid='+((pageLinks[i].textContent-1)*20));
+	}
+	pageLinks[4].outerHTML = '<b>'+pageLinks[4].textContent+'</b>';
+	current.outerHTML = pageLinks[0].outerHTML; current = pageLinks[0].previous('a');
+	current.textContent = current.textContent-1;
+	current.href = current.href.replace(/&pid=\d+/gi, '&pid='+ (current.textContent-1)*20); 
+}
+
+function postPage(){
+
 	if ($('image').getWidth() > 1480)
 		$('note-container').setAttribute('style','cursor:pointer');
 		
@@ -48,7 +72,7 @@ function main(){
 	
 	var br1 = $$('div#tag_list br')[0];
 	
-	var customTags = (readCookie("tags")||'').split(/[, ]|%20+/g).sort().reverse();
+	var customTags = (readCookie("tags")||'').toLowerCase().split(/[, ]|%20+/g).sort().reverse();
 	var currentTags = $('tags').value.split(/\s+/);
 	currentTags.each(function(tag){
 		customTags = customTags.without(tag);
@@ -62,8 +86,13 @@ function main(){
 	
 	var strong = $$('#tag_list ul strong')[0]	
 	
-	inserTag({}, strong.previous()); 
+	inserTag({}, strong.previous());	
 	new Insertion.Before(strong,'<br>');  
+	
+	statisticsArea(strong);
+}
+
+function statisticsArea(strong){
 	strong.innerHTML = '<u>'+strong.innerHTML+'</u>';	
 	var pointer = strong.nextSibling;
 
@@ -194,7 +223,7 @@ function addTag(that){
 
 function applyEdit(that){ 
 
-	var value = that.value.trim().replace(/\s+/g, '_');	
+	var value = that.value.trim().replace(/\s+/g, '_').toLowerCase();	
 	if (!value) {
 		if (that.id != 'newTag')
 			exclude(that);
@@ -239,3 +268,4 @@ function togglEdit(that){
 //todo fix cookies + => %2520 
 //todo fix userlist
 //todo add recent tags
+//todo current page in the middle
