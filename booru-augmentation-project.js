@@ -41,10 +41,10 @@ function listPage(){
 	if (contents.length < 15)
 		return;
 	var pos = contents.indexOf(current);
-	if (pos!=2)
-		if ((current.textContent <= 6) || (pos >= 7))
-			return;
-			
+	if (pos>=7)// ||  (pos>2 && current.textContent < 7))
+		return;			
+	if ((contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href))
+		return;
 	var pid = ~document.location.search.indexOf('pid=')?document.location.search.split('&').findAll(function(el){return ~el.indexOf('pid');})[0].replace('pid=',''):0;
 	
 	shift = Math.min(current.textContent-2, 4);
