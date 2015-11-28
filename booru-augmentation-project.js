@@ -36,20 +36,32 @@ function listPage(){
 	var paginator = $('paginator');
 	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"'))
 		return;
-	var pageLinks = $A(document.querySelectorAll('div#paginator > a:not([alt])'));
 	var current = paginator.down('b');
-	if (paginator.immediateDescendants().without(paginator.down('script')).indexOf(current)!=2)
+	var contents = paginator.immediateDescendants().without(paginator.down('script'));
+	if (contents.length < 15)
 		return;
+	var pos = contents.indexOf(current);
+	if (pos!=2)
+		if ((current.textContent <= 6) || (pos >= 7))
+			return;
+			
 	var pid = ~document.location.search.indexOf('pid=')?document.location.search.split('&').findAll(function(el){return ~el.indexOf('pid');})[0].replace('pid=',''):0;
+	
 	shift = Math.min(current.textContent-2, 4);
+	
+	var newPos = paginator.down('a:not([alt])', shift);
+	var next = current.next();
+	if (next == newPos)
+		next = current
+	else
+		paginator.insertBefore(current, newPos);
+	paginator.insertBefore(newPos, next);
+	
+	var pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
 	for (var i=0; i<pageLinks.length; i++){ 
-		pageLinks[i].textContent = current.textContent - shift + i;
+		pageLinks[i].textContent = pid/20 - shift + i; if (!pageLinks[i].href) continue;
 		pageLinks[i].href = pageLinks[i].href.replace(/&pid=\d+/gi, '&pid='+((pageLinks[i].textContent-1)*20));
 	};
-	pageLinks[shift].outerHTML = '<b>'+pageLinks[shift].textContent+'</b>';
-	current.outerHTML = pageLinks[0].outerHTML; current = pageLinks[0].previous('a')||paginator.down('a[alt="back"]').next('a');
-	current.textContent = current.textContent-1;
-	current.href = current.href.replace(/&pid=\d+/gi, '&pid='+ (current.textContent-1)*20); 
 }
 
 function postPage(){
