@@ -34,17 +34,20 @@ function main(){
 
 function listPage(){
 	var paginator = $('paginator');
+	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"'))
+		return;
 	var pageLinks = $A(document.querySelectorAll('div#paginator > a:not([alt])'));
 	var current = paginator.down('b');
-	if ((paginator.immediateDescendants().indexOf(current)!=3) ||(current.textContent<6))
+	if (paginator.immediateDescendants().without(paginator.down('script')).indexOf(current)!=2)
 		return;
-	var pid = ~document.location.href.indexOf('&pid=')?document.location.search.split('&').findAll(function(el){return ~el.indexOf('pid');})[0].replace('pid=',''):0;
+	var pid = ~document.location.search.indexOf('pid=')?document.location.search.split('&').findAll(function(el){return ~el.indexOf('pid');})[0].replace('pid=',''):0;
+	shift = Math.min(current.textContent-2, 4);
 	for (var i=0; i<pageLinks.length; i++){ 
-		pageLinks[i].textContent = current.textContent - 4 + i;
+		pageLinks[i].textContent = current.textContent - shift + i;
 		pageLinks[i].href = pageLinks[i].href.replace(/&pid=\d+/gi, '&pid='+((pageLinks[i].textContent-1)*20));
-	}
-	pageLinks[4].outerHTML = '<b>'+pageLinks[4].textContent+'</b>';
-	current.outerHTML = pageLinks[0].outerHTML; current = pageLinks[0].previous('a');
+	};
+	pageLinks[shift].outerHTML = '<b>'+pageLinks[shift].textContent+'</b>';
+	current.outerHTML = pageLinks[0].outerHTML; current = pageLinks[0].previous('a')||paginator.down('a[alt="back"]').next('a');
 	current.textContent = current.textContent-1;
 	current.href = current.href.replace(/&pid=\d+/gi, '&pid='+ (current.textContent-1)*20); 
 }
@@ -265,7 +268,7 @@ function togglEdit(that){
 	span.down('a.aEdit').next('a').hide();
 }
 
-//todo fix cookies + => %2520 
+//todo fix cookies + => %2520 ?
 //todo fix userlist
-//todo add recent tags
-//todo current page in the middle
+//todo add recent tags?
+//todo check ansi input
