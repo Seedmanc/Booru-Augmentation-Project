@@ -13,18 +13,20 @@ It's no secret that free accounts on booru.org offer very little convenience com
 Like on Danbooru, but so far only works for the first tag entered. 
 
 * AJAX tag editor
+ 
+ ![pic](http://puu.sh/lwWff/d89ecf28d3.png)
 
 Allows you to quickly add, edit and remove tags with just a few clicks and without page reloading. No more scrolling to the bottom of the page to open the edit form, do everything directly in the tag list to the left.  
-  ![pic](http://puu.sh/lwWff/d89ecf28d3.png)
   
 * Revamp Statistics area below the tag list 
 
-Improve readability, add user links and image title, remove unnecessary info.
-  
 ![screen](http://puu.sh/lyCVk/363400f0e5.png)
 
+Improve readability, add user links and image title, remove unnecessary info.
+
 * Shift page number links, so that links to both 5 previous and 5 next pages are available 
-  ![screen](http://puu.sh/lC2cz/0a406af9a0.png)
+  
+![screen](http://puu.sh/lC2cz/0a406af9a0.png)
 
 By default booru only shows 10 next links, which makes jumping several pages back impossible.
 
