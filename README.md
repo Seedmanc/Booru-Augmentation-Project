@@ -6,28 +6,30 @@ It's no secret that free accounts on booru.org offer very little convenience com
   
 ## List of features:
 
-* Drop-down select tag list for the search field (planned)
+* Drop-down select tag list for the search field
 
-Kinda like on Danbooru, but probably will only work for the first tag entered. 
+![screen](http://puu.sh/lD5FK/c90fd506d8.png)
 
-* AJAX tag editor (ready)
+Like on Danbooru, but so far only works for the first tag entered. 
+
+* AJAX tag editor
 
 Allows you to quickly add, edit and remove tags with just a few clicks and without page reloading. No more scrolling to the bottom of the page to open the edit form, do everything directly in the tag list to the left.  
   ![pic](http://puu.sh/lwWff/d89ecf28d3.png)
   
-* Revamp Statistics area below the tag list (ready)
+* Revamp Statistics area below the tag list 
 
 Improve readability, add user links and image title, remove unnecessary info.
   
 ![screen](http://puu.sh/lyCVk/363400f0e5.png)
 
-* Shift page number links, so that links to both 5 previous and 5 next pages are available (ready)
+* Shift page number links, so that links to both 5 previous and 5 next pages are available 
   ![screen](http://puu.sh/lC2cz/0a406af9a0.png)
 
-By default booru only shows 10 next links, which made jumping several pages back impossible.
+By default booru only shows 10 next links, which makes jumping several pages back impossible.
 
 Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts and some other.
 
-You feedback is required, please go to [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
+You feedback is required, please go to the [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
 
 Be sure to check out my other Booru-related userscript project - the [Mass Uploader](https://github.com/Seedmanc/Booru-mass-uploader)
