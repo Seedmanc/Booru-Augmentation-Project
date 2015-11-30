@@ -321,9 +321,9 @@ function exclude(that){
 	var tag = li.down('.aEdit').next('a').textContent.trim().replace(/\s+/g,'_');
 	li.parentNode.removeChild(li);
 	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
-	BAPtags[oldTag] = Math.min(Number(BAPtags[oldTag]||0)-1,0);
-	if (BAPtags[oldTag] == 0)
-		delete BAPtags[oldTag];
+	BAPtags[tag] = Math.min(Number(BAPtags[tag]||0)-1,0);
+	if (BAPtags[tag] == 0)
+		delete BAPtags[tag];
 	showButton();
 }
 
@@ -337,3 +337,4 @@ function togglEdit(that){
 //todo fix userlist
 //todo add recent tags?
 //todo check ansi input
+//todo tag autocomplete onsearchfocus only
