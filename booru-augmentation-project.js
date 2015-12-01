@@ -278,6 +278,14 @@ function addTag(that){
 	showButton();
 }
 
+function isANSI(s) {														//Some tags might be already in roman and do not require translation
+	var is=true;
+	s=s.split('');
+	s.each(function(v){
+		is=is&&(/[\u0000-\u00ff]/.test(v));});
+    return is;
+};
+
 function applyEdit(that){ 
 
 	var value = that.value.trim().replace(/\s+/g, '_').toLowerCase();	
@@ -287,6 +295,14 @@ function applyEdit(that){
 		return;
 	}
 	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g,'_')||'';
+	if (!isANSI(value)) {
+		that.style['backgroundColor']='#ffff00';
+		that.value = oldTag;
+		that.focus();
+		return;
+	} else
+		that.style['backgroundColor']='';
+	value = encodeURIComponent(value);
 	var link = that.previous('span > a');
 	link.href = 'index.php?page=post&s=list&tags='+value;
 	link.textContent = value.replace(/_/g, ' ');
@@ -336,5 +352,4 @@ function togglEdit(that){
 //todo fix cookies + => %2520 ?
 //todo fix userlist
 //todo add recent tags?
-//todo check ansi input
 //todo tag autocomplete onsearchfocus only
