@@ -19,8 +19,8 @@ var BAPopts = localStorage.getItem('BAPopts')? JSON.parse(localStorage.getItem('
 function main(){
 	if (~document.location.href.indexOf('page=post')) {
 		storeTags();		
-		if ($$('input#tags, input#stags').length)
-			searchField();  
+		if ($$('input#tags, input#stags').length) 
+			$$('input#tags, input#stags')[0].onfocus = function(){loadOptions(this);};  
 	}
 		
 	if (~document.location.href.indexOf('&s=view') && (readCookie('user_id') && readCookie('pass_hash')))
@@ -41,10 +41,17 @@ function main(){
   }catch(any){};
 }
 
+function loadOptions(that){
+	searchField();
+	that.onfocus = '';
+}
+
 function storeTags(){
 	var tags = $$('#tag_list ul li span');
+	if (!tags || !tags.length)
+		return;
 	tags.each(function(span){
-		var tag = span.down('a').textContent.trim().replace(/\s+/g,'_');
+		var tag = span.down('a').textContent.trim().replace(/\s+/g,'_').replace(/\"|\'/g,'');
 		var num = Number(span.textContent.split(/\s+/).last());
 		BAPtags[tag] = num;
 	});
@@ -55,9 +62,9 @@ function searchField(){
 	if (!$('datags'))
 		new Insertion.Top(document.body, '<datalist id="datags"></datalist');
 	var datalist = $('datags');
-	datalist.innerHTML = '';
 	Object.keys(BAPtags).each(function(tag){
-		new Insertion.Bottom(datalist, '<option value="'+tag+'">'+BAPtags[tag]+'</option>');
+		if (!datalist.down('option[value="'+tag+'"]'))
+			new Insertion.Bottom(datalist, '<option value="'+tag+'">'+BAPtags[tag]+'</option>');
 	})
 	$$('input#tags, input#stags')[0].oninput=function(){enableDatalist(this);}	
 }
@@ -206,6 +213,7 @@ function inserTag(tag, where){
 	} else {
 		where.next().down('.editField').onkeydown = function(){if (event.keyCode == 13) applyEdit(this);}
 		where.next().down('.editField').id = 'newTag';
+		where.next().down('.editField').onfocus = function(){loadOptions(this);}
 		where.next().down('.editField').oninput = function(){enableDatalist(this);}	
 	}
 	
@@ -351,5 +359,4 @@ function togglEdit(that){
 
 //todo fix cookies + => %2520 ?
 //todo fix userlist
-//todo add recent tags?
 //todo tag autocomplete onsearchfocus only
