@@ -6,15 +6,40 @@
 // @include	http://*.booru.org/*index.php?page=post*
 // @include	http://*.booru.org/help/*
 // @include	http://*.booru.org/*index.php?page=alias*
+// @include	http://*.booru.org/index.php?page=account-options
 // @grant 		none 
 // @run-at		document-body
 // @noframes
 // ==/UserScript==
 
-document.addEventListener('DOMContentLoaded', main, false);
+var BAPtags = '';
+
+if (!~document.location.href.indexOf('s=mass_upload'))
+	document.addEventListener('DOMContentLoaded', main, false);
+	
 var booruName = document.location.host.split('.booru.org')[0];
-var BAPtags = localStorage.getItem('BAPtags')? JSON.parse(localStorage.getItem('BAPtags')) : {};
-var BAPopts = localStorage.getItem('BAPopts')? JSON.parse(localStorage.getItem('BAPopts')) : {};
+
+if (~document.location.href.indexOf('page=post'))
+	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
+var BAPopts = JSON.parse(localStorage.getItem('BAPopts')||'{"ansiOnly":true}');
+
+function optionsPage(){
+	var table = $$('div.option table')[0];
+	var submit = $$('div.option input[type="submit"]')[0];
+	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><label class="block">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></td><td><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
+	
+	Object.keys(BAPopts).each(function(opt){
+		$$('input.BAPoption#'+opt)[0].checked = BAPopts[opt];
+	})
+	
+	submit.onclick=function(){
+		$$('input.BAPoption').each(function(el){
+			BAPopts[el.id] = el.checked;
+		});
+		localStorage.BAPopts = JSON.stringify(BAPopts);
+	};	
+}
 
 function main(){
 	if (~document.location.href.indexOf('page=post')) {
@@ -26,7 +51,9 @@ function main(){
 	if (~document.location.href.indexOf('&s=view') && (readCookie('user_id') && readCookie('pass_hash')))
 		postPage()
 	else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post'))
-		listPage(); 	
+		listPage()
+	else if (~document.location.href.indexOf('page=account-options'))
+		optionsPage();
 
   try {
 	var ad = document.querySelectorAll('center div[id*="adbox"]')[0];
@@ -85,7 +112,7 @@ function listPage(){
 	if (contents.length < 15)
 		return;
 	var pos = contents.indexOf(current);
-	if (pos>=7)// ||  (pos>2 && current.textContent < 7))
+	if (pos>=7)
 		return;			
 	if ((contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href))
 		return;
@@ -138,7 +165,8 @@ function postPage(){
 	})
 	if ((customTags.length) && (readCookie('tags'))){		
 		customTags.each(function(tag){
-			inserTag({text:tag}, br1);
+			if (tag)
+				inserTag({text:tag}, br1);
 		});
 		new Insertion.After($$('a.aAdd').last().up('li'),'<br>');
 	}
@@ -286,7 +314,7 @@ function addTag(that){
 	showButton();
 }
 
-function isANSI(s) {														//Some tags might be already in roman and do not require translation
+function isANSI(s) {
 	var is=true;
 	s=s.split('');
 	s.each(function(v){
@@ -303,7 +331,7 @@ function applyEdit(that){
 		return;
 	}
 	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g,'_')||'';
-	if (!isANSI(value)) {
+	if (!isANSI(value) && BAPopts.ansiOnly) {
 		that.style['backgroundColor']='#ffff00';
 		that.value = oldTag;
 		that.focus();
@@ -357,6 +385,4 @@ function togglEdit(that){
 	span.down('a.aEdit').next('a').hide();
 }
 
-//todo fix cookies + => %2520 ?
 //todo fix userlist
-//todo tag autocomplete onsearchfocus only
