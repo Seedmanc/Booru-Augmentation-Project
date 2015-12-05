@@ -23,6 +23,12 @@ if (~document.location.href.indexOf('page=post'))
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true}');
 
 function main() {
+	new Insertion.Bottom($$('head')[0], '<style>\
+		input[type=text]:focus {\
+			background: #FFC;\
+		}\
+	</style>');	
+	
 	if (~document.location.href.indexOf('page=post')) {
 		storeTags();
 		if ($$('input#tags, input#stags').length)
@@ -30,12 +36,14 @@ function main() {
 				loadOptions(this);
 			};
 	}
+	
 	if (~document.location.href.indexOf('&s=view') && (readCookie('user_id') && readCookie('pass_hash')))
 		postPage()
 	else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post'))
 		listPage()
 	else if (~document.location.href.indexOf('page=account-options'))
 		optionsPage();
+		
 	try {
 		var ad = document.querySelectorAll('center div[id*="adbox"]')[0];
 		if (ad)
@@ -52,11 +60,14 @@ function main() {
 function optionsPage() {
 	var table = $$('div.option table')[0];
 	var submit = $$('div.option input[type="submit"]')[0];
+	
 	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><label class="block">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></td><td><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
+	
 	Object.keys(BAPopts).each(function (opt) {
 		$$('input.BAPoption#' + opt)[0].checked = BAPopts[opt];
 	})
+	
 	submit.onclick = function () {
 		$$('input.BAPoption').each(function (el) {
 			BAPopts[el.id] = el.checked;
@@ -74,22 +85,28 @@ function storeTags() {
 	var tags = $$('#tag_list ul li span');
 	if (!tags || !tags.length)
 		return;
+	var oldTags = JSON.stringify(BAPtags);
 	tags.each(function (span) {
 		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
 		var num = Number(span.textContent.split(/\s+/).last());
 		BAPtags[tag] = num;
 	});
-	localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+	var newTags = JSON.stringify(BAPtags);
+	if (newTags!=oldTags)
+		document.title+='+';
+	localStorage.setItem('BAPtags', newTags);
 }
 
 function searchField() {
 	if (!$('datags'))
 		new Insertion.Top(document.body, '<datalist id="datags"></datalist');
 	var datalist = $('datags');
+	
 	Object.keys(BAPtags).each(function (tag) {
 		if (!datalist.down('option[value="' + tag + '"]'))
 			new Insertion.Bottom(datalist, '<option value="' + tag + '">' + BAPtags[tag] + '</option>');
 	})
+	
 	$$('input#tags, input#stags')[0].oninput = function () {
 		enableDatalist(this);
 	}
@@ -103,22 +120,42 @@ function enableDatalist(that) {
 }
 
 function listPage() {
+	var tags = $$('#tag_list ul li');
+	if (tags && tags.length)
+		tags.each(function (li){
+			var q = li.down('span');
+			if (q && q.firstChild.nodeValue=='? ')
+				q.removeChild(q.firstChild);
+			var a = li.down('a');
+			if (a && a.textContent == '+') {
+				new Insertion.After(a, '&nbsp;');
+				a = a.next('a');
+				if (a && a.textContent == '-')
+					a.innerHTML = a.innerHTML.replace('-','<b>-</b>');
+			}
+		})
+
 	var paginator = $('paginator');
 	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"'))
 		return;
+		
 	var current = paginator.down('b');
 	var contents = paginator.immediateDescendants().without(paginator.down('script'));
 	if (contents.length < 15)
 		return;
+		
 	var pos = contents.indexOf(current);
 	if (pos >= 7)
 		return;
+		
 	if ((contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href))
 		return;
+		
 	var pid = ~document.location.search.indexOf('pid=') ? document.location.search.split('&').findAll(function (el) {
 		return ~el.indexOf('pid');
 	})[0].replace('pid=', '') : 0;
-	shift = Math.min(current.textContent - 2, 4);
+	
+	var shift = Math.min(current.textContent - 2, 4);
 	var newPos = paginator.down('a:not([alt])', shift);
 	var next = current.next();
 	if (next == newPos)
@@ -127,6 +164,7 @@ function listPage() {
 		paginator.insertBefore(current, newPos);
 	paginator.insertBefore(newPos, next);
 	var pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
+	
 	for (var i = 0; i < pageLinks.length; i++) {
 		pageLinks[i].textContent = pid / 20 - shift + i;
 		if (!pageLinks[i].href) continue;
@@ -137,6 +175,7 @@ function listPage() {
 function postPage() {
 	if ($('image').getWidth() > 1480)
 		$('note-container').setAttribute('style', 'cursor:pointer');
+		
 	new Insertion.Bottom($$('head')[0], '<style>\
 		.aEdit{font-size:smaller; background-color:rgba(255, 255, 0, 0.33);}\
 		.aDelete{font-size:smaller; background-color:rgba(255,0, 0, 0.2);}\
@@ -144,10 +183,12 @@ function postPage() {
 		#image{max-width:1480px; margin-right:0 !important;}\
 		.fitIn{max-width:auto !important;}\
 	</style>');
+	
 	$('image').setAttribute('style', '');
 	$('image').onclick = function () {
 		toggleFitIn(this);
 	};
+	
 	var taglist = $$('div#tag_list li a');
 	taglist.each(function (tagli) {
 		inserTag({
@@ -155,9 +196,11 @@ function postPage() {
 			num: tagli.up('span').textContent.split(' ').last()
 		}, tagli.up('li'))
 	});
+	
 	var br1 = $$('div#tag_list br')[0];
 	var customTags = (readCookie("tags") || '').toLowerCase().split(/[, ]|%20+/g).sort().reverse();
 	var currentTags = $('tags').value.split(/\s+/);
+	
 	currentTags.each(function (tag) {
 		customTags = customTags.without(tag);
 	})
@@ -170,6 +213,7 @@ function postPage() {
 		});
 		new Insertion.After($$('a.aAdd').last().up('li'), '<br>');
 	}
+	
 	var strong = $$('#tag_list ul strong')[0]
 	inserTag({}, strong.previous());
 	new Insertion.Before(strong, '<br>');
@@ -179,6 +223,7 @@ function postPage() {
 function statisticsArea(strong) {
 	strong.innerHTML = '<u>' + strong.innerHTML + '</u>';
 	var pointer = strong.nextSibling;
+	
 	while (pointer && pointer.tagName != 'li') {
 		if (pointer.nodeType === 3) {
 			var split = pointer.data.split(':');
@@ -212,6 +257,7 @@ function inserTag(tag, where) {
 	var aDelete = ' <a href="#' + tag.text + '" class="aDelete" style="display:none;">[-]</a>';
 	var editField = '<input placeholder="add tag" class="editField" type="text" value="' + (tag.text || '') + '" style="display:none;">';
 	var tagLink = ' <a href="index.php?page=post&s=list&tags=" style=""></a> ';
+	
 	if (tag.text && !tag.num) { //custom tag
 		aAdd = aAdd.replace('style="display:none;"', 'style=""');
 		tagLink = '<span class="customTag">' + tag.text + '</span>';
@@ -223,8 +269,10 @@ function inserTag(tag, where) {
 		aEdit = aEdit.replace('style="display:none;"', 'style=""');
 		aDelete = aDelete.replace('style="display:none;"', 'style=""');
 	}
+	
 	var span = '<span style="color: #a0a0a0;">' + aAdd + aEdit + tagLink + editField + aDelete + ' ' + (tag.num || '') + '</span>';
 	new Insertion.After(where, '<li>' + span + '</li>');
+	
 	where.next().down('.aAdd').onclick = function () {
 		addTag(this);
 	}
@@ -260,6 +308,7 @@ function inserTag(tag, where) {
 function showButton() {
 	if ($('btnSubmit'))
 		return;
+		
 	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="btnSubmit" type="submit" value="submit"><br><br>');
 	$('btnSubmit').onclick = function () {
 		mySubmit();
@@ -267,7 +316,8 @@ function showButton() {
 }
 
 function mySubmit() {
-	new Insertion.Before($('btnSubmit'), '<img id="spinner" 	src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	new Insertion.Before($('btnSubmit'), '<img id="spinner" src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	
 	$('btnSubmit').hide();
 	$('edit_form').request({
 		onComplete: function (response) {
@@ -319,6 +369,7 @@ function toggleFitIn(that) {
 
 function addTag(that) {
 	var tag = that.next('span.customTag').textContent.trim().replace(/\s+/g, '_');
+	
 	that.hide();
 	that.next('.aEdit').show();
 	that.next('.aDelete').show();
@@ -330,6 +381,7 @@ function addTag(that) {
 
 function isANSI(s) {
 	var is = true;
+	
 	s = s.split('');
 	s.each(function (v) {
 		is = is && (/[\u0000-\u00ff]/.test(v));
@@ -346,7 +398,7 @@ function applyEdit(that) {
 	}
 	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g, '_') || '';
 	if (!isANSI(value) && BAPopts.ansiOnly) {
-		that.style['backgroundColor'] = '#ffff00';
+		that.style['backgroundColor'] = '#fc0';
 		that.value = oldTag;
 		that.focus();
 		return;
@@ -388,6 +440,7 @@ function applyEdit(that) {
 function exclude(that) {
 	var li = that.up('li');
 	var tag = li.down('.aEdit').next('a').textContent.trim().replace(/\s+/g, '_');
+	
 	li.parentNode.removeChild(li);
 	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
 	BAPtags[tag] = Math.min(Number(BAPtags[tag] || 0) - 1, 0);
@@ -398,6 +451,7 @@ function exclude(that) {
 
 function togglEdit(that) {
 	var span = that.parentNode;
+	
 	span.down('input').show().focus();
 	span.down('a.aEdit').next('a').hide();
 }
