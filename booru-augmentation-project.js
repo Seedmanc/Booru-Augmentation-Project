@@ -4,9 +4,8 @@
 // @version	1.0
 // @author		Seedmanc
 // @include	http://*.booru.org/*index.php?page=post*
-// @include	http://*.booru.org/help/*
-// @include	http://*.booru.org/*index.php?page=alias*
 // @include	http://*.booru.org/index.php?page=account-options
+// @include	http://*.booru.org/stats/*
 // @grant 		none 
 // @run-at		document-body
 // @noframes
@@ -23,12 +22,7 @@ if (~document.location.href.indexOf('page=post'))
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true}');
 
 function main() {
-	new Insertion.Bottom($$('head')[0], '<style>\
-		input[type=text]:focus {\
-			background: #FFC;\
-		}\
-	</style>');	
-	
+
 	if (~document.location.href.indexOf('page=post')) {
 		storeTags();
 		if ($$('input#tags, input#stags').length)
@@ -42,7 +36,9 @@ function main() {
 	else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post'))
 		listPage()
 	else if (~document.location.href.indexOf('page=account-options'))
-		optionsPage();
+		optionsPage()
+	else if (~document.location.href.indexOf('/stats'))
+		statsPage();
 		
 	try {
 		var ad = document.querySelectorAll('center div[id*="adbox"]')[0];
@@ -53,8 +49,23 @@ function main() {
 			ad.parentNode.parentNode.removeChild(ad.parentNode);
 		var ad = $$('center a[href*="patreon"]')[0];
 		if (ad)
-			ad.parentNode.parentNode.removeChild(ad.parentNode);
+			ad.parentNode.parentNode.removeChild(ad.parentNode);	
+		new Insertion.Bottom($$('head')[0], '<style>\
+			input[type=text]:focus {\
+				background: #FFC;\
+			}\
+		</style>');		
 	} catch (any) {};
+
+}
+
+function statsPage(){
+	var links = document.querySelectorAll('td > a');
+	if (!links.length)
+		return;
+	for (var i = 0; i<links.length; i++){
+		links[i].href = links[i].href.replace('page=account&s=profile','page=account_profile');
+	}
 }
 
 function optionsPage() {
@@ -455,4 +466,3 @@ function togglEdit(that) {
 	span.down('input').show().focus();
 	span.down('a.aEdit').next('a').hide();
 }
-//todo fix userlist
