@@ -30,7 +30,7 @@ Improve readability, add user links and image title, remove unnecessary info.
 
 By default booru only shows 10 next links, which makes jumping several pages back impossible.
 
-Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts and some other.
+Aside from these, I plan to add some minor tweaks such as fitting the post image into screen width, fixing links to user accounts, highlighting potential mistakes in tags input and some other.
 
 You feedback is required, please go to the [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
 
