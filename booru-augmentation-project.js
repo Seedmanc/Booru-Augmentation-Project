@@ -130,10 +130,28 @@ function enableDatalist(that) {
 		that.removeAttribute('list');
 }
 
+function markTags(li){
+	var q = li.textContent.trim().split(/\s+/);
+	q = q[q.length-1];
+	if (isNaN(q) || q >= 5) {
+		delete li.style;
+		li.down('span').style.color = "#A0A0A0";
+		return;
+	}
+	if (q <= 1) {
+		li.style.backgroundColor = "#FC0";
+	} else {
+		li.style.backgroundColor = "#FF0";
+	}
+	li.down('span').style.color = "#000";
+}
+
 function listPage() {
 	var tags = $$('#tag_list ul li');
 	if (tags && tags.length)
 		tags.each(function (li){
+			if (!li.textContent.trim())
+				return;
 			var q = li.down('span');
 			if (q && q.firstChild.nodeValue=='? ')
 				q.removeChild(q.firstChild);
@@ -144,8 +162,9 @@ function listPage() {
 				if (a && a.textContent == '-')
 					a.innerHTML = a.innerHTML.replace('-','<b>-</b>');
 			}
-		})
-
+			markTags(li);
+		});
+		
 	var paginator = $('paginator');
 	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"'))
 		return;
@@ -205,7 +224,7 @@ function postPage() {
 		inserTag({
 			text: tagli.textContent.trim().replace(/\s+/g, '_'),
 			num: tagli.up('span').textContent.split(' ').last()
-		}, tagli.up('li'))
+		}, tagli.up('li'));
 	});
 	
 	var br1 = $$('div#tag_list br')[0];
@@ -280,9 +299,10 @@ function inserTag(tag, where) {
 		aEdit = aEdit.replace('style="display:none;"', 'style=""');
 		aDelete = aDelete.replace('style="display:none;"', 'style=""');
 	}
-	
+
 	var span = '<span style="color: #a0a0a0;">' + aAdd + aEdit + tagLink + editField + aDelete + ' ' + (tag.num || '') + '</span>';
 	new Insertion.After(where, '<li>' + span + '</li>');
+	markTags(where.next('li'));
 	
 	where.next().down('.aAdd').onclick = function () {
 		addTag(this);
@@ -314,6 +334,8 @@ function inserTag(tag, where) {
 	}
 	if (tag.text && ~where.textContent.indexOf(tag.text.replace(/_/g, ' ')))
 		where.parentNode.removeChild(where);
+	
+	
 }
 
 function showButton() {
@@ -346,7 +368,7 @@ function mySubmit() {
 			});
 			var lis = {};
 			taglist.each(function (taglink) {
-				lis[taglink.previous('a').textContent.trim()] = true; //taglink.up('span').textContent.split(/\s+/).last()||' ';
+				lis[taglink.previous('a').textContent.trim()] = true;
 			});
 			taglist.each(function (taglink) {
 				taglink.up('li').parentNode.removeChild(taglink.up('li'));
@@ -356,7 +378,7 @@ function mySubmit() {
 			sorted.each(function (tag) {
 				inserTag({
 					text: tag,
-					num: BAPtags[tag.replace(/\s+/g, '_')]
+					num: BAPtags[tag.replace(/\s+/g, '_').replace(/\'/g, '')]
 				}, $$('#tag_list ul br')[0]);
 			});
 			br = $$('#tag_list ul br')[0];
@@ -380,6 +402,8 @@ function toggleFitIn(that) {
 
 function addTag(that) {
 	var tag = that.next('span.customTag').textContent.trim().replace(/\s+/g, '_');
+	var currentNum = that.up('span').lastChild;
+	currentNum.data = ' ' + String(BAPtags[tag] || '');
 	
 	that.hide();
 	that.next('.aEdit').show();
@@ -415,26 +439,32 @@ function applyEdit(that) {
 		return;
 	} else
 		that.style['backgroundColor'] = '';
+		
 	value = encodeURIComponent(value);
+	
 	var link = that.previous('span > a');
 	link.href = 'index.php?page=post&s=list&tags=' + value;
 	link.textContent = value.replace(/_/g, ' ');
 	link.show();
 	that.hide();
-	that.onblur = function () {
-		applyEdit(this);
-	};
+
 	that.onkeydown = function () {
 		if (event.keyCode == 13) this.blur();
 	}
 	link.previous('.aEdit').show();
 	link.next('.aDelete').show();
+	
 	$('tags').value = ($('tags').value.replace(oldTag, '') + ' ' + value.replace(/\s+/g, '_')).replace(/\s+/g, ' ');
-	if (oldTag != value) {
+	
+	if (oldTag != value) {		
+		var currentNum = that.up('span').lastChild;
+		currentNum.data = ' ' + String(BAPtags[value] || '0');	
+		markTags(that.up('li'));
+		
 		BAPtags[value] = Number(BAPtags[value] || 0) + 1;
 		if (oldTag) {
-			BAPtags[oldTag] = Math.min(Number(BAPtags[oldTag] || 0) - 1, 0);
-			if (BAPtags[oldTag] == 0)
+			BAPtags[oldTag] = Math.max(Number(BAPtags[oldTag] || 0) - 1, 0);
+			if (BAPtags[oldTag] === 0)
 				delete BAPtags[oldTag];
 		}
 		showButton();
@@ -446,6 +476,9 @@ function applyEdit(that) {
 		$('newTag').focus();
 	}
 	that.placeholder = 'edit tag';
+	that.onblur = function () {
+		applyEdit(this);
+	};
 }
 
 function exclude(that) {
@@ -455,7 +488,7 @@ function exclude(that) {
 	li.parentNode.removeChild(li);
 	$('tags').value = $('tags').value.split(/\s+/).without(tag).join(' ');
 	BAPtags[tag] = Math.min(Number(BAPtags[tag] || 0) - 1, 0);
-	if (BAPtags[tag] == 0)
+	if (BAPtags[tag] === 0)
 		delete BAPtags[tag];
 	showButton();
 }
