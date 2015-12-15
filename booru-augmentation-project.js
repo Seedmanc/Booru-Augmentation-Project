@@ -139,9 +139,9 @@ function markTags(li){
 		return;
 	}
 	if (q <= 1) {
-		li.style.backgroundColor = "#FC0";
+		li.style.backgroundColor = "rgba(255,255,0,0.66)";
 	} else {
-		li.style.backgroundColor = "#FF0";
+		li.style.backgroundColor = "rgba(255,255,0,0.33)";
 	}
 	li.down('span').style.color = "#000";
 }
