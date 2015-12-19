@@ -431,6 +431,22 @@ function applyEdit(that) {
 			exclude(that);
 		return;
 	}
+	
+	var existing = $$('#tag_list ul > li > span > a:not([class])');
+	var element;
+	var exists = existing.some(function (tag){
+		if (tag.textContent.trim().replace(/\s+/g, '_') == value) {
+			element = tag;
+			return true;
+		};
+	});
+	if (exists) {
+		element.up('li').style.backgroundColor = 'rgba(255,255,0,0.5)';
+		setTimeout(function(){element.up('li').style.backgroundColor = '';}, 1000);
+		that.focus();
+		return;
+	}
+	
 	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g, '_') || '';
 	if (!isANSI(value) && BAPopts.ansiOnly) {
 		that.style['backgroundColor'] = '#fc0';
@@ -499,3 +515,5 @@ function togglEdit(that) {
 	span.down('input').show().focus();
 	span.down('a.aEdit').next('a').hide();
 }
+// todo fix bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
+// todo tag categories
