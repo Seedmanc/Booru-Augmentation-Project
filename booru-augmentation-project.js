@@ -11,15 +11,13 @@
 // @noframes
 // ==/UserScript==
 
-var booruName = document.location.host.split('.booru.org')[0];
-
 if (!~document.location.href.indexOf('s=mass_upload'))
 	document.addEventListener('DOMContentLoaded', main, false);
 	
 var BAPtags = '';
 if (~document.location.href.indexOf('page=post'))
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
-var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true}');
+var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true}');
 
 function main() {
 
@@ -74,6 +72,8 @@ function optionsPage() {
 	
 	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><label class="block">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></td><td><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>+solo</b></label><p>Mark green/add a solo tag if there are less than 2 existing tags</p></td><td><br><input class="BAPoption" id="solo" type="checkbox"/></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>-tagme</b></label><p>Mark red an existing tagme tag for easier removal</p></td><td><br><input class="BAPoption" id="tagme" type="checkbox"/></td></tr>');
 	
 	Object.keys(BAPopts).each(function (opt) {
 		$$('input.BAPoption#' + opt)[0].checked = BAPopts[opt];
@@ -132,13 +132,15 @@ function enableDatalist(that) {
 
 function markTags(li){
 	var q = li.textContent.trim().split(/\s+/);
-	q = q[q.length-1];
-	if (isNaN(q) || q >= 5) {
-		delete li.style;
+	if (~q.indexOf('tagme') && BAPopts.tagme)
+		li.style.backgroundColor = 'rgba(255,0,0,0.25)';
+	q1 = q[q.length-1];
+	if (isNaN(q1) || q1 >= 5) {
+	//	delete li.style;
 		li.down('span').style.color = "#A0A0A0";
 		return;
 	}
-	if (q <= 1) {
+	if (q1 <= 1) {
 		li.style.backgroundColor = "rgba(255,255,0,0.66)";
 	} else {
 		li.style.backgroundColor = "rgba(255,255,0,0.33)";
@@ -221,6 +223,8 @@ function postPage() {
 	
 	var taglist = $$('div#tag_list li a');
 	taglist.each(function (tagli) {
+		if (!tagli.textContent.trim())
+			return false;
 		inserTag({
 			text: tagli.textContent.trim().replace(/\s+/g, '_'),
 			num: tagli.up('span').textContent.split(' ').last()
@@ -241,6 +245,16 @@ function postPage() {
 					text: tag
 				}, br1);
 		});
+		if (BAPopts.solo && taglist.length == 1 && taglist[0].textContent.trim() != 'solo'){
+			if (!$$('.customTag').some(function(ct){
+				var ctli=ct.up('li');
+				if (~ctli.textContent.split(/\s+/).indexOf('solo')) {
+					ctli.style.backgroundColor = 'rgba(0,255,0,0.25)';
+					return true;
+				}					
+			}))
+				inserTag({text: 'solo'}, br1);
+		}
 		new Insertion.After($$('a.aAdd').last().up('li'), '<br>');
 	}
 	
@@ -334,7 +348,6 @@ function inserTag(tag, where) {
 	}
 	if (tag.text && ~where.textContent.indexOf(tag.text.replace(/_/g, ' ')))
 		where.parentNode.removeChild(where);
-	
 	
 }
 
@@ -440,14 +453,15 @@ function applyEdit(that) {
 			return true;
 		};
 	});
-	if (exists) {
+	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g, '_') || '';
+	
+	if (exists && (value != oldTag)) {
 		element.up('li').style.backgroundColor = 'rgba(255,255,0,0.5)';
 		setTimeout(function(){element.up('li').style.backgroundColor = '';}, 1000);
 		that.focus();
 		return;
 	}
 	
-	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g, '_') || '';
 	if (!isANSI(value) && BAPopts.ansiOnly) {
 		that.style['backgroundColor'] = '#fc0';
 		that.value = oldTag;
