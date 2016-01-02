@@ -17,7 +17,7 @@ if (!~document.location.href.indexOf('s=mass_upload'))
 var BAPtags = '';
 if (~document.location.href.indexOf('page=post'))
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
-var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true}');
+var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
 
 function main() {
 
@@ -69,15 +69,24 @@ function statsPage(){
 function optionsPage() {
 	var table = $$('div.option table')[0];
 	var submit = $$('div.option input[type="submit"]')[0];
-	
+
 	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><label class="block">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></td><td><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>+solo</b></label><p>Mark green/add a solo tag if there are less than 2 existing tags</p></td><td><br><input class="BAPoption" id="solo" type="checkbox"/></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>-tagme</b></label><p>Mark red an existing tagme tag for easier removal</p></td><td><br><input class="BAPoption" id="tagme" type="checkbox"/></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><label class="block">Show complete tag list</label><p>Display here a list of all tags sorted by their amount of posts</p></td><td><br><input class="BAPoption" id="showTags" type="checkbox"/></td></tr>');
 	
+	new Insertion.After($$('form > p')[0], '<div style="float:right; height:0; left:720px; position:absolute;"><table id="allTags" class="highlightable" style="width:680px;"><caption>Tag list by post amount</caption><thead><tr><th>tag</th><th>posts</th></tr></thead><tbody></tbody></table></div>');
+		
 	Object.keys(BAPopts).each(function (opt) {
 		$$('input.BAPoption#' + opt)[0].checked = BAPopts[opt];
-	})
+	});
+	
+	$('showTags').onchange = function(that){
+		showTags(that.target.checked);
+	};
+
+	showTags(BAPopts.showTags);
 	
 	submit.onclick = function () {
 		$$('input.BAPoption').each(function (el) {
@@ -85,6 +94,28 @@ function optionsPage() {
 		});
 		localStorage.BAPopts = JSON.stringify(BAPopts);
 	};
+}
+
+function showTags(show){	
+	var allTags = $('allTags');
+
+	if (!show) {
+		allTags.hide();
+		return;
+	}
+	allTags.show();
+	if (allTags.down('a'))
+		return;
+	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
+	Object.keys(BAPtags).sort(function(a,b){a=BAPtags[a]; b=BAPtags[b]; return a==b?0:((b-a)/Math.abs(b-a));}).each(function(tag){
+		if (BAPtags.hasOwnProperty(tag)) {
+			if (BAPtags[tag] < 1)
+				delete BAPtags[tag]
+			else
+				new Insertion.Bottom(allTags, '<tr><td'+(BAPtags[tag]<5?' style="background-color:rgba(255,255,0,0.25);"':'')+'><a href="index.php?page=post&s=list&tags='+tag+'">'+tag+'</a></td><td>'+BAPtags[tag]+'</td></tr>');			
+		}
+	});
+	localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 }
 
 function loadOptions(that) {
@@ -150,6 +181,17 @@ function markTags(li){
 
 function listPage() {
 	var tags = $$('#tag_list ul li');
+	
+	var posts = $$('span.thumb');
+	
+	if (!posts.length && ~document.location.href.indexOf('tags=')) {
+		var t = document.location.href.split('tags=')[1].split('+');
+		if (t.length == 1) {
+			delete BAPtags[t[0]];
+			localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+		}
+	}			
+	
 	if (tags && tags.length)
 		tags.each(function (li){
 			if (!li.textContent.trim())
@@ -165,7 +207,9 @@ function listPage() {
 					a.innerHTML = a.innerHTML.replace('-','<b>-</b>');
 			}
 			markTags(li);
-		});
+		})
+	else
+		return;
 		
 	var paginator = $('paginator');
 	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"'))
