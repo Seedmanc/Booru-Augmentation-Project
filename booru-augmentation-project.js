@@ -475,9 +475,10 @@ function showButton() {
 
 function mySubmit() {
 	var btnSubmit = $('btnSubmit');
-	var spinner = $('spinner');
-	new Insertion.Before(btnSubmit, '<img id="spinner" src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	var spinner;
 
+	new Insertion.Before(btnSubmit, '<img id="spinner" src="https://dl.dropboxusercontent.com/u/74005421/js%20requisites/16px_on_transparent.gif">');
+	spinner = $('spinner');
 	btnSubmit.hide();
 	$('edit_form').request({
 		onComplete: function (response) {
@@ -662,3 +663,4 @@ function togglEdit(that) {
 }
 // todo: fix bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
+// todo: fix increasing whitespace above image stats after submitting tags
