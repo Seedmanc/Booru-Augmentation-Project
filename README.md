@@ -32,6 +32,8 @@ By default booru only shows 10 next links, which makes jumping several pages bac
 
 Aside from these, I added some minor tweaks such as fitting the post image into screen width, fixing links to user accounts, highlighting potential mistakes in tags input, showing complete tag list in account options and some other.
 
+Note, that tags information such as the list of them for autocompletion and amount of posts for every tag is being collected and accumulated as your navigate the booru. Which means that it will be inaccurate right after installing of the userscript, but will get better with more usage.
+
 You feedback is required, please go to the [Issues](https://github.com/Seedmanc/Booru-Augmentation-Project/issues) section and make suggestions which features I should add, and what would you like to see.
 
 Be sure to check out my other Booru-related userscript project - the [Mass Uploader](https://github.com/Seedmanc/Booru-mass-uploader)
