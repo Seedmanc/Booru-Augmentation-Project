@@ -664,3 +664,5 @@ function togglEdit(that) {
 // todo: fix bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
 // todo: fix increasing whitespace above image stats after submitting tags
+// todo: add new tag either by onblur or with a mouse button
+// todo: larger buttons/fields
