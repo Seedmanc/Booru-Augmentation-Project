@@ -161,9 +161,7 @@ function storeTags() {
 	});
 
 	newTags = JSON.stringify(BAPtags);
-	if (newTags != oldTags) {
-		document.title += '+';
-	}
+
 	localStorage.setItem('BAPtags', newTags);
 }
 
