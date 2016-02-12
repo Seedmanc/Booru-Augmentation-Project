@@ -11,16 +11,19 @@
 // @noframes
 // ==/UserScript==
 
-if (!~document.location.href.indexOf('s=mass_upload')) {
-	document.addEventListener('DOMContentLoaded', main, false);
-}
-
 var BAPtags = '';
 
 if (~document.location.href.indexOf('page=post')) {
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
 }
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
+
+if (!~document.location.href.indexOf('s=mass_upload')) {
+	if (document.readyState == 'loading')
+		document.addEventListener('DOMContentLoaded', main, false)
+	else
+		main();
+}
 
 function main() {
 
@@ -335,7 +338,7 @@ function postPage() {
 	});
 
 	var br1 = $$('div#tag_list br')[0];
-	var customTags = (readCookie("tags") || '').toLowerCase().split(/[, ]|%20+/g).sort().reverse();
+	var customTags = (readCookie("tags") || '').toLowerCase().split(/[, ]|%20+|\+/g).sort().reverse();
 	var currentTags = $('tags').value.split(/\s+/);
 
 	currentTags.each(function (tag) {
