@@ -19,10 +19,11 @@ if (~document.location.href.indexOf('page=post')) {
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
 
 if (!~document.location.href.indexOf('s=mass_upload')) {
-	if (document.readyState == 'loading')
+	if (document.readyState == 'loading') {
 		document.addEventListener('DOMContentLoaded', main, false)
-	else
+	} else {
 		main();
+	}
 }
 
 function main() {
@@ -61,10 +62,10 @@ function main() {
 			ad.parentNode.parentNode.removeChild(ad.parentNode);
 		}
 		new Insertion.Bottom($$('head')[0],
-			'<style>'+
-				'input[type=text]:focus {'+
-					'background: #FFC;'+
-				'}'+
+			'<style>' +
+			'input[type=text]:focus {' +
+			'background: #FFC;' +
+			'}' +
 			'</style>'
 		);
 	} catch (any) {}
@@ -309,12 +310,12 @@ function postPage() {
 	}
 
 	new Insertion.Bottom($$('head')[0],
-		'<style>'+
-			'.aEdit{font-size:smaller; background-color:rgba(255, 255, 0, 0.33);}'+
-			'.aDelete{font-size:smaller; background-color:rgba(255,0, 0, 0.2);}'+
-			'.aAdd {font-size:smaller; background-color:rgba(0, 255, 0, 0.25);}'+
-			'#image{max-width:1480px; margin-right:0 !important;}'+
-			'.fitIn{max-width:auto !important;}'+
+		'<style>' +
+		'.aEdit{font-size:smaller; background-color:rgba(255, 255, 0, 0.33);}' +
+		'.aDelete{font-size:smaller; background-color:rgba(255,0, 0, 0.2);}' +
+		'.aAdd {font-size:smaller; background-color:rgba(0, 255, 0, 0.25);}' +
+		'#image{max-width:1480px; margin-right:0 !important;}' +
+		'.fitIn{max-width:auto !important;}' +
 		'</style>'
 	);
 
