@@ -5,7 +5,7 @@
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/index.php?page=account-options
-// @include		http://*.booru.org/stats/*
+// @include		http://*.booru.org/index.php?page=account&s=profile&uname=*
 // @grant		none
 // @run-at		document-body
 // @noframes
@@ -43,8 +43,8 @@ function main() {
 		listPage();
 	} else if (~document.location.href.indexOf('page=account-options')) {
 		optionsPage();
-	} else if (~document.location.href.indexOf('/stats')) {
-		statsPage();
+	} else if (~document.location.href.indexOf('page=account&s=profile&uname=')) {
+		document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
 	}
 
 	var ad;
@@ -69,18 +69,6 @@ function main() {
 			'</style>'
 		);
 	} catch (any) {}
-
-}
-
-function statsPage() {
-	var links = document.querySelectorAll('td > a');
-
-	if (!links.length) {
-		return;
-	}
-	for (var i = 0; i < links.length; i++) {
-		links[i].href = links[i].href.replace('page=account&s=profile', 'page=account_profile');
-	}
 }
 
 function optionsPage() {
