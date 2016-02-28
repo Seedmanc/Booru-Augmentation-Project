@@ -8,6 +8,7 @@
 // @include		http://*.booru.org/index.php?page=account&s=profile&uname=*
 // @grant		none
 // @run-at		document-body
+// @require     https://ajax.googleapis.com/ajax/libs/prototype/1.7.3.0/prototype.js
 // @noframes
 // ==/UserScript==
 
@@ -428,13 +429,13 @@ function inserTag(tag, where) {
 		where.next().down('.editField').onblur = function () {
 			applyEdit(this);
 		};
-		where.next().down('.editField').onkeydown = function () {
+		where.next().down('.editField').onkeydown = function (event) {
 			if (event.keyCode == 13) {
 				this.blur();
 			}
 		}
 	} else {
-		where.next().down('.editField').onkeydown = function () {
+		where.next().down('.editField').onkeydown = function (event) {
 			if (event.keyCode == 13) {
 				applyEdit(this);
 			}
@@ -595,7 +596,7 @@ function applyEdit(that) {
 	link.show();
 	that.hide();
 
-	that.onkeydown = function () {
+	that.onkeydown = function (event) {
 		if (event.keyCode == 13) {
 			this.blur();
 		}
@@ -651,7 +652,7 @@ function togglEdit(that) {
 	span.down('input').show().focus();
 	span.down('a.aEdit').next('a').hide();
 }
-// todo: fix bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
+// todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
 // todo: fix increasing whitespace above image stats after submitting tags
 // todo: add new tag either by onblur or with a mouse button
