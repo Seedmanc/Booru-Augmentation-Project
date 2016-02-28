@@ -242,7 +242,7 @@ function listPage() {
 
 	var paginator = $('paginator');
 
-	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"')) {
+	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"]')) {
 		return;
 	}
 
