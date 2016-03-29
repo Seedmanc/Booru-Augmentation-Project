@@ -222,16 +222,13 @@ function listPage() {
 			}
 			var q = li.down('span');
 
-			if (q && q.firstChild.nodeValue == '? ') {
-				q.removeChild(q.firstChild);
-			}
 			var a = li.down('a');
 
 			if (a && a.textContent == '+') {
 				new Insertion.After(a, '&nbsp;');
 				a = a.next('a');
 				if (a && a.textContent == '-') {
-					a.innerHTML = a.innerHTML.replace('-', '<b>-</b>');
+					a.innerHTML = a.innerHTML.replace('-', '&ndash;');
 				}
 			}
 			markTags(li);
