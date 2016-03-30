@@ -4,6 +4,7 @@
 // @version		1.0
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
+// @include		http://*.booru.org/*index.php?page=alias*
 // @include		http://*.booru.org/index.php?page=account-options
 // @include		http://*.booru.org/index.php?page=account&s=profile&uname=*
 // @grant		none
@@ -14,7 +15,7 @@
 
 var BAPtags = '';
 
-if (~document.location.href.indexOf('page=post')) {
+if (~document.location.href.indexOf('page=post') || ~document.location.href.indexOf('page=alias')) {
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
 }
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
@@ -44,6 +45,8 @@ function main() {
 		listPage();
 	} else if (~document.location.href.indexOf('page=account-options')) {
 		optionsPage();
+	} else if (~document.location.href.indexOf('page=alias')) {
+		aliasPage();
 	} else if (~document.location.href.indexOf('page=account&s=profile&uname=')) {
 		document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
 	}
@@ -110,10 +113,12 @@ function showTags(show) {
 		return;
 	}
 	allTags.show();
+
 	if (allTags.down('a')) {
 		return;
 	}
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
+
 	Object.keys(BAPtags).sort(function (a, b) {
 		a = BAPtags[a];
 		b = BAPtags[b];
@@ -169,7 +174,7 @@ function searchField() {
 		}
 	});
 
-	$$('input#tags, input#stags')[0].oninput = function () {
+	$$('input#tags, input#stags, input[name="tag"]')[0].oninput = function () {
 		enableDatalist(this);
 	};
 }
@@ -648,6 +653,31 @@ function togglEdit(that) {
 
 	span.down('input').show().focus();
 	span.down('a.aEdit').next('a').hide();
+}
+
+function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
+	var example = $$('body > div:nth-child(4)');
+
+	if (example.length && ~example[0].textContent.indexOf('example')) {
+		example[0].style.color = "black";
+		example[0].innerHTML = example[0].innerHTML.replace(/(An example)(.+)(Evangelion)(.+)(Neon_Genesis_Evangelion)(.+)\)/gi, "<b>$1</b>: <code style='color:#A0A'>$3</code>$4<code style='color:#A0A'>$5</code>$6");
+	}
+
+	$$('input[name="tag"]')[0].onfocus = function () {
+		loadOptions(this);
+	};
+	$$("th")[2].hide();
+
+	$$('.highlightable td').each(function (td, index) {
+		var tag = td.textContent;
+
+		if ((index + 1) % 3 == 0) {
+			td.hide();
+		} else {
+			td.innerHTML = "<a href='index.php?page=post&s=list&tags=" + tag + "'>" + tag + "</a>" +
+				(tag && BAPtags[tag.toLowerCase()] ? ' (' + BAPtags[tag.toLowerCase()] + ')' : "");
+		}
+	})
 }
 // todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
