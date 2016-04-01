@@ -195,7 +195,6 @@ function markTags(li) {
 	}
 	q1 = q[q.length - 1];
 	if (isNaN(q1) || q1 >= 5) {
-		//	delete li.style;
 		li.down('span').style.color = "#A0A0A0";
 		return;
 	}
@@ -225,16 +224,27 @@ function listPage() {
 			if (!li.textContent.trim()) {
 				return;
 			}
-			var q = li.down('span');
-
+			var s = li.down('span');
 			var a = li.down('a');
+			var query = s.down('a').textContent;
+
+			if (~query.indexOf(' ')) {
+				query = query.replace(/\s+/g, '_');
+			} else {
+				query = 'booru ' + query;
+			}
 
 			if (a && a.textContent == '+') {
 				new Insertion.After(a, '&nbsp;');
 				a = a.next('a');
 				if (a && a.textContent == '-') {
-					a.innerHTML = a.innerHTML.replace('-', '&ndash;');
+					a.textContent = a.textContent.replace('-', '–');
 				}
+			}
+
+			if (s.childNodes[0].textContent == '? ') {
+				s.childNodes[0].textContent = ' ';
+				new Insertion.Before(s.childNodes[0], '<a style="color:#58c;" href="https://www.google.com/search?q=' + query + '" target="_blank">?</a>');
 			}
 			markTags(li);
 		});
