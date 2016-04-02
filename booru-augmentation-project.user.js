@@ -5,8 +5,9 @@
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
-// @include		http://*.booru.org/index.php?page=account-options
-// @include		http://*.booru.org/index.php?page=account&s=profile&uname=*
+// @include		http://*.booru.org/*index.php?page=forum&s=view*
+// @include		http://*.booru.org/*index.php?page=account-options
+// @include		http://*.booru.org/*index.php?page=account&s=profile&uname=*
 // @grant		none
 // @run-at		document-body
 // @require     https://ajax.googleapis.com/ajax/libs/prototype/1.7.3.0/prototype.js
@@ -39,7 +40,7 @@ function main() {
 		}
 	}
 
-	if (~document.location.href.indexOf('&s=view') && (readCookie('user_id') && readCookie('pass_hash'))) {
+	if (~document.location.href.indexOf('&s=view') && ~document.location.href.indexOf('page=post') && (readCookie('user_id') && readCookie('pass_hash'))) {
 		postPage();
 	} else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post')) {
 		listPage();
@@ -47,6 +48,8 @@ function main() {
 		optionsPage();
 	} else if (~document.location.href.indexOf('page=alias')) {
 		aliasPage();
+	} else if (~document.location.href.indexOf('page=forum')) {
+		forumPage();
 	} else if (~document.location.href.indexOf('page=account&s=profile&uname=')) {
 		document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
 	}
@@ -142,12 +145,11 @@ function loadOptions(that) {
 
 function storeTags() {
 	var tags = $$('#tag_list ul li span');
-	var newTags, oldTags;
+	var newTags;
 
 	if (!tags || !tags.length) {
 		return;
 	}
-	oldTags = JSON.stringify(BAPtags);
 
 	tags.each(function (span) {
 		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
@@ -163,7 +165,7 @@ function searchField() {
 	var datalist = $('datags');
 
 	if (!datalist) {
-		new Insertion.Top(document.body, '<datalist id="datags"></datalist');
+		new Insertion.Top(document.body, '<datalist id="datags"></datalist>');
 	}
 	datalist = $('datags');
 
@@ -192,7 +194,7 @@ function markTags(li) {
 	if (~q.indexOf('tagme') && BAPopts.tagme) {
 		li.style.backgroundColor = 'rgba(255,0,0,0.25)';
 	}
-	q1 = q[q.length - 1];
+	var q1 = q[q.length - 1];
 	if (isNaN(q1) || q1 >= 5) {
 		li.down('span').style.color = "#A0A0A0";
 		return;
@@ -370,6 +372,8 @@ function postPage() {
 	inserTag({}, strong.previous());
 	new Insertion.Before(strong, '<br>');
 	statisticsArea(strong);
+
+	linkifyContainer('#note-container > div[id^="c"][style],#tag_list > ul');
 }
 
 function statisticsArea(strong) {
@@ -530,6 +534,7 @@ function mySubmit() {
 }
 
 function toggleFitIn(that) {
+	//this really needs improvement
 	if (that.getAttribute('style')) {
 		that.setAttribute('style', '')
 	} else {
@@ -687,6 +692,78 @@ function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
 				(tag && BAPtags[tag.toLowerCase()] ? ' (' + BAPtags[tag.toLowerCase()] + ')' : "");
 		}
 	})
+}
+
+function linkifyContainer(selector) {
+	var containers = $$(selector);
+
+	if (!containers || !containers.length) {
+		return;
+	}
+
+	containers.forEach(function (container) {
+		$A(container.childNodes).each(function (node) {
+			if (node.nodeType != 3) {
+				return true;
+			}
+			linkifyTextNode(node);
+		});
+	});
+}
+
+function forumPage() {
+	linkifyContainer('div.body');
+}
+// from https://arantius.com/misc/greasemonkey/linkify-plus.user.js
+function linkifyTextNode(node) {
+	var urlRE = new RegExp(
+		'('
+			// leading scheme:// or "www."
+		+ '\\b([a-z][-a-z0-9+.]+://|www\\.)'
+			// everything until non-URL character
+		+ '[^\\s\'"<>()]+'
+		+ ')', 'gi');
+
+	var l, m;
+	var txt = node.textContent;
+	var span = null;
+	var p = 0;
+	while (m = urlRE.exec(txt)) {
+		if (null == span) {
+			// Create a span to hold the new text with links in it.
+			span = document.createElement('span');
+		}
+
+		//get the link without trailing dots
+		l = m[0].replace(/\.*$/, '');
+		var lLen = l.length;
+		//put in text up to the link
+		span.appendChild(document.createTextNode(txt.substring(p, m.index)));
+		//create a link and put it in the span
+		a = document.createElement('a');
+		a.appendChild(document.createTextNode(l));
+		if (!~l.indexOf(":/")) {
+			l = "http://" + l;
+		}
+		a.setAttribute('href', l);
+		if (!~l.indexOf(document.location.host)) {
+			a.setAttribute('target', '_blank');
+		}
+		span.appendChild(a);
+		//track insertion point
+		p = m.index + lLen;
+	}
+	if (span) {
+		//take the text after the last link
+		span.appendChild(document.createTextNode(txt.substring(p, txt.length)));
+		//replace the original text with the new span
+		try {
+			node.parentNode.replaceChild(span, node);
+		} catch (e) {
+			console.error(e);
+			console.log(node);
+		}
+	}
 }
 // todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
