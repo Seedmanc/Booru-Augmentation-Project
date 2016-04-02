@@ -128,7 +128,7 @@ function showTags(show) {
 			if (BAPtags[tag] < 1) {
 				delete BAPtags[tag]
 			} else {
-				new Insertion.Bottom(allTags, '<tr><td' + (BAPtags[tag] < 5 ? ' style="background-color:rgba(255,255,0,0.25);"' : '') + '><a href="index.php?page=post&s=list&tags=' + tag + '">' + tag + '</a></td><td>' + BAPtags[tag] + '</td></tr>');
+				new Insertion.Bottom(allTags, '<tr><td' + (BAPtags[tag] < 5 ? ' style="background-color:rgba(255,255,0,0.33);"' : '') + '><a href="index.php?page=post&s=list&tags=' + tag + '">' + tag + '</a></td><td>' + BAPtags[tag] + '</td></tr>');
 			}
 		}
 	});
@@ -151,8 +151,7 @@ function storeTags() {
 
 	tags.each(function (span) {
 		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
-		var num = Number(span.textContent.split(/\s+/).last());
-		BAPtags[tag] = num;
+		BAPtags[tag] = Number(span.textContent.split(/\s+/).last());
 	});
 
 	newTags = JSON.stringify(BAPtags);
@@ -199,7 +198,7 @@ function markTags(li) {
 		return;
 	}
 	if (q1 <= 1) {
-		li.style.backgroundColor = "rgba(255,255,0,0.66)";
+		li.style.backgroundColor = "rgba(255,225,0,0.66)";
 	} else {
 		li.style.backgroundColor = "rgba(255,255,0,0.33)";
 	}
