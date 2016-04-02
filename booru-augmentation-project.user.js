@@ -16,10 +16,6 @@
 // ==/UserScript==
 
 var BAPtags = '';
-
-if (~document.location.href.indexOf('page=post') || ~document.location.href.indexOf('page=alias')) {
-	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
-}
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
 var pages = {
 	'post': {
@@ -134,7 +130,7 @@ function showTags(show) {
 	if (allTags.down('a')) {
 		return;
 	}
-	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
+	BAPtags = BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	Object.keys(BAPtags).sort(function (a, b) {
 		a = BAPtags[a];
@@ -162,9 +158,7 @@ function storeTags() {
 	var tags = $$('#tag_list ul li span');
 	var newTags;
 
-	if (!tags || !tags.length) {
-		return;
-	}
+	BAPtags = BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	tags.each(function (span) {
 		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
@@ -175,11 +169,9 @@ function storeTags() {
 	if (newTags != {})
 		localStorage.setItem('BAPtags', newTags);
 
-	if ($$('input#tags, input#stags').length) {
-		$$('input#tags, input#stags')[0].onfocus = function () {
-			loadOptions(this);
-		};
-	}
+	$$('input[name^="tag"]')[0].onfocus = function () {
+		loadOptions(this);
+	};
 }
 
 function searchField() {
@@ -555,8 +547,10 @@ function mySubmit() {
 			});
 			br = $$('#tag_list ul br')[0];
 			br.parentNode.removeChild(br);
+
 			if (BAPtags != {})
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+
 			searchField();
 		},
 		onFailure:  function () {
@@ -567,7 +561,7 @@ function mySubmit() {
 }
 
 function toggleFitIn(that) {
-	//this really needs improvement
+	//TODO this really needs improvement, CSS
 	if (that.getAttribute('style')) {
 		that.setAttribute('style', '')
 	} else {
@@ -710,9 +704,8 @@ function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
 		example[0].innerHTML = example[0].innerHTML.replace(/(An example)(.+)(Evangelion)(.+)(Neon_Genesis_Evangelion)(.+)\)/gi, "<b>$1</b>: <code style='color:#A0A'>$3</code>$4<code style='color:#A0A'>$5</code>$6");
 	}
 
-	$$('input[name="tag"]')[0].onfocus = function () {
-		loadOptions(this);
-	};
+	storeTags();
+
 	$$("th")[2].hide();
 
 	$$('.highlightable td').each(function (td, index) {
