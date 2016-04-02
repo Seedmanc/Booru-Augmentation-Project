@@ -49,7 +49,7 @@ if (!~document.location.href.indexOf('s=mass_upload')) {
 
 function parseUrl(prefix, handlers){
 
-	for (key in handlers) {
+	for (var key in handlers) {
 		if (~document.location.href.indexOf(prefix + key)) {
 			if (typeof handlers[key] == 'function') {
 				handlers[key]();
@@ -184,6 +184,7 @@ function storeTags() {
 
 function searchField() {
 	var datalist = $('datags');
+	var goFullRetard = ~navigator.userAgent.toLowerCase().indexOf('firefox');
 
 	if (!datalist) {
 		new Insertion.Top(document.body, '<datalist id="datags"></datalist>');
@@ -192,7 +193,9 @@ function searchField() {
 
 	Object.keys(BAPtags).each(function (tag) {
 		if (!datalist.down('option[value="' + tag + '"]')) {
-			new Insertion.Bottom(datalist, '<option value="' + tag + '">' + BAPtags[tag] + '</option>');
+			var content = goFullRetard ? tag + ' (' + BAPtags[tag] + ')' : BAPtags[tag];
+
+			new Insertion.Bottom(datalist, '<option value="' + tag + '">' + content + '</option>');
 		}
 	});
 
