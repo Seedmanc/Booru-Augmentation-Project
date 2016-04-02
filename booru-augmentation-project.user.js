@@ -5,6 +5,7 @@
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
+// @include		http://*.booru.org/*index.php?page=comment*
 // @include		http://*.booru.org/*index.php?page=forum&s=view*
 // @include		http://*.booru.org/*index.php?page=account-options
 // @include		http://*.booru.org/*index.php?page=account&s=profile&uname=*
@@ -20,6 +21,23 @@ if (~document.location.href.indexOf('page=post') || ~document.location.href.inde
 	BAPtags = JSON.parse(localStorage.getItem('BAPtags') || '{}');
 }
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
+var pages = {
+	'post': {
+		'view': postPage,
+		'list': listPage
+	},
+	'account-options': optionsPage,
+	'alias': aliasPage,
+	'forum': {
+		'view': linkify
+	},
+	'comment': linkify,
+	'account': {
+		'profile': function(){
+			document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
+		}
+	}
+};
 
 if (!~document.location.href.indexOf('s=mass_upload')) {
 	if (document.readyState == 'loading') {
@@ -29,30 +47,26 @@ if (!~document.location.href.indexOf('s=mass_upload')) {
 	}
 }
 
-function main() {
+function parseUrl(prefix, handlers){
 
-	if (~document.location.href.indexOf('page=post')) {
-		storeTags();
-		if ($$('input#tags, input#stags').length) {
-			$$('input#tags, input#stags')[0].onfocus = function () {
-				loadOptions(this);
-			};
+	for (key in handlers) {
+		if (~document.location.href.indexOf(prefix + key)) {
+			if (typeof handlers[key] == 'function') {
+				handlers[key]();
+
+				break;
+			} else {
+				parseUrl('s=', handlers[key]); // yay recursion
+
+				break;
+			}
 		}
 	}
+}
 
-	if (~document.location.href.indexOf('&s=view') && ~document.location.href.indexOf('page=post') && (readCookie('user_id') && readCookie('pass_hash'))) {
-		postPage();
-	} else if (~document.location.href.indexOf('&s=list') && ~document.location.href.indexOf('page=post')) {
-		listPage();
-	} else if (~document.location.href.indexOf('page=account-options')) {
-		optionsPage();
-	} else if (~document.location.href.indexOf('page=alias')) {
-		aliasPage();
-	} else if (~document.location.href.indexOf('page=forum')) {
-		forumPage();
-	} else if (~document.location.href.indexOf('page=account&s=profile&uname=')) {
-		document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
-	}
+function main() {
+
+	parseUrl('page=', pages);
 
 	var ad;
 	try {
@@ -135,7 +149,8 @@ function showTags(show) {
 			}
 		}
 	});
-	localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+	if (BAPtags != {})
+		localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 }
 
 function loadOptions(that) {
@@ -157,8 +172,14 @@ function storeTags() {
 	});
 
 	newTags = JSON.stringify(BAPtags);
+	if (newTags != {})
+		localStorage.setItem('BAPtags', newTags);
 
-	localStorage.setItem('BAPtags', newTags);
+	if ($$('input#tags, input#stags').length) {
+		$$('input#tags, input#stags')[0].onfocus = function () {
+			loadOptions(this);
+		};
+	}
 }
 
 function searchField() {
@@ -211,12 +232,15 @@ function listPage() {
 	var tags = $$('#tag_list ul li');
 	var posts = $$('span.thumb');
 
+	storeTags();
+
 	if (!posts.length && ~document.location.href.indexOf('tags=')) {
 		var t = document.location.href.split('tags=')[1].split('+');
 
 		if (t.length == 1) {
 			delete BAPtags[t[0]];
-			localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+			if (BAPtags != {})
+				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 		}
 	}
 
@@ -306,6 +330,11 @@ function listPage() {
 
 function postPage() {
 	var image = $('image');
+
+	storeTags();
+
+	if (!(readCookie('user_id') && readCookie('pass_hash')))
+		return;
 
 	if (image.getWidth() > 1480) {
 		$('note-container').setAttribute('style', 'cursor:pointer');
@@ -523,7 +552,8 @@ function mySubmit() {
 			});
 			br = $$('#tag_list ul br')[0];
 			br.parentNode.removeChild(br);
-			localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+			if (BAPtags != {})
+				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 			searchField();
 		},
 		onFailure:  function () {
@@ -694,6 +724,10 @@ function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
 	})
 }
 
+function linkify() {
+	linkifyContainer('div.body,div[id^="cbody"] > p');
+}
+
 function linkifyContainer(selector) {
 	var containers = $$(selector);
 
@@ -711,9 +745,6 @@ function linkifyContainer(selector) {
 	});
 }
 
-function forumPage() {
-	linkifyContainer('div.body');
-}
 // from https://arantius.com/misc/greasemonkey/linkify-plus.user.js
 function linkifyTextNode(node) {
 	var urlRE = new RegExp(
