@@ -328,9 +328,6 @@ function postPage() {
 
 	storeTags();
 
-	if (!(readCookie('user_id') && readCookie('pass_hash')))
-		return;
-
 	if (image.getWidth() > 1480) {
 		$('note-container').setAttribute('style', 'cursor:pointer');
 	}
@@ -797,3 +794,4 @@ function linkifyTextNode(node) {
 // todo: fix increasing whitespace above image stats after submitting tags
 // todo: add new tag either by onblur or with a mouse button
 // todo: larger buttons/fields
+// todo: linkify users in comment section
