@@ -6,6 +6,7 @@
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
 // @include		http://*.booru.org/*index.php?page=comment*
+// @include		http://*.booru.org/*index.php?page=history*
 // @include		http://*.booru.org/*index.php?page=forum&s=view*
 // @include		http://*.booru.org/*index.php?page=account-options
 // @include		http://*.booru.org/*index.php?page=account&s=profile&uname=*
@@ -18,20 +19,21 @@
 var BAPtags = '';
 var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
 var pages = {
-	'post': {
-		'view': postPage,
-		'list': listPage
-	},
-	'account-options': optionsPage,
-	'alias': aliasPage,
-	'forum': {
-		'view': linkify
-	},
-	'comment': linkify,
 	'account': {
 		'profile': function(){
 			document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
 		}
+	},
+	'account-options': optionsPage,
+	'alias': aliasPage,
+	'comment': linkify,
+	'forum': {
+		'view': linkify
+	},
+	'history&type=tag_history': historyPage,
+	'post': {
+		'view': postPage,
+		'list': listPage
 	}
 };
 
@@ -789,6 +791,64 @@ function linkifyTextNode(node) {
 		}
 	}
 }
+
+// idea by Usernam, madness removal by Seedmanc
+function historyPage() {
+
+	var table = $$('.highlightable')[0];
+	table.style = "width: 100%; white-space: nowrap; table-layout: auto;";
+
+	table.select('th').each(function (th) {
+		th.removeAttribute("width");
+	});
+
+// Delta
+	table.select('th')[0].textContent = '∆';
+
+// Tags
+	table.select('th')[4].style.width = "100%";
+
+// Options
+	table.select('th')[5].textContent = 'Undo';
+
+	var rows = table.select('tr:not(:first-of-type)');
+
+	rows.each(function (tr, i) { // it's that simple
+		var tdTags = tr.select('td')[4];
+
+		var tags1 = tdTags.textContent.trim().split(' ');
+		var tags2 = rows[i + 1] ? rows[i + 1].select('td')[4].textContent.trim().split(' ') : tags1;
+
+		var addTags = tags1.filter(function (el) {
+			return !~tags2.indexOf(el);
+		});
+		var delTags = tags2.filter(function (el) {
+			return !~tags1.indexOf(el);
+		});
+		var sameTags = tags1.intersect(tags2);
+
+		var usernam = tr.select("td")[3];
+		if (usernam.textContent == "Anonymous") {
+			usernam.innerHTML = '<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>';
+		} else {
+			usernam.innerHTML = usernam.innerHTML.replace(/([\w\.\(\)\/]+)/g, '<a href="index.php?page=account_profile&uname=$1">$1</a>');
+		}
+
+		if (tags2.length > tags1.length) {
+			tr.select('td')[0].style.backgroundColor = 'red'
+		} else if (tags2.length < tags1.length) {
+			tr.select('td')[0].style.backgroundColor = 'green';
+		}
+
+		// this needs testing for tags with weird characters inside, although you shouldn't be having those anyway
+		var html =  addTags.join(' ').replace(/([\w\.\(\)\/]+)/g, '<b style="color:green;">+<a href="index.php?page=post&s=list&tags=$1">$1</a></b> ') +
+					delTags.join(' ').replace(/([\w\.\(\)\/]+)/g, '<i style="color:red;"><b>&ndash;</b><a href="index.php?page=post&s=list&tags=$1">$1</a></i>  ') +
+					sameTags.join(' ').replace(/([\w\.\(\)\/]+)/g,'<a href="index.php?page=post&s=list&tags=$1">$1</a>');
+
+		tdTags.innerHTML = html;
+	});
+}
+
 // todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
 // todo: tag categories?
 // todo: fix increasing whitespace above image stats after submitting tags
