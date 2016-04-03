@@ -412,7 +412,10 @@ function statisticsArea(strong) {
 					pointer.data = '';
 				} else {
 					if (~split[0].indexOf('By')) {
-						new Insertion.Before(pointer.nextSibling, '<a href="index.php?page=account_profile&uname=' + split[1].trim() + '">' + split[1].trim() + '</a>');
+						var userlink = split[1].trim() == 'Anonymous' ? 
+							'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' : 
+							'<a href="index.php?page=account_profile&uname=' + split[1].trim() + '">' + split[1].trim() + '</a>';
+						new Insertion.Before(pointer.nextSibling, userlink);
 						pointer.data = split[0] + ': ';
 						split[1] = ' ';
 					}
