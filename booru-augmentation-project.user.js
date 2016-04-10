@@ -797,9 +797,10 @@ function linkifyTextNode(node) {
 
 // idea by Usernam, madness removal by Seedmanc
 function historyPage() {
+	var regexp = /([\S]+)/g;
 
 	var table = $$('.highlightable')[0];
-	table.style = "width: 100%; white-space: nowrap; table-layout: auto;";
+	table.style = "width: 100%; table-layout: auto;";
 
 	table.select('th').each(function (th) {
 		th.removeAttribute("width");
@@ -819,6 +820,8 @@ function historyPage() {
 	rows.each(function (tr, i) { // it's that simple
 		var tdTags = tr.select('td')[4];
 
+		tr.select('td')[2].style="white-space: nowrap;";
+
 		var tags1 = tdTags.textContent.trim().split(' ');
 		var tags2 = rows[i + 1] ? rows[i + 1].select('td')[4].textContent.trim().split(' ') : tags1;
 
@@ -834,7 +837,7 @@ function historyPage() {
 		if (usernam.textContent == "Anonymous") {
 			usernam.innerHTML = '<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>';
 		} else {
-			usernam.innerHTML = usernam.innerHTML.replace(/([\w\.\(\)\/]+)/g, '<a href="index.php?page=account_profile&uname=$1">$1</a>');
+			usernam.innerHTML = usernam.innerHTML.replace(regexp, '<a href="index.php?page=account_profile&uname=$1">$1</a>');
 		}
 
 		if (tags2.length > tags1.length) {
@@ -844,9 +847,9 @@ function historyPage() {
 		}
 
 		// this needs testing for tags with weird characters inside, although you shouldn't be having those anyway
-		var html =  addTags.join(' ').replace(/([\w\.\(\)\/]+)/g, '<b style="color:green;">+<a href="index.php?page=post&s=list&tags=$1">$1</a></b> ') +
-					delTags.join(' ').replace(/([\w\.\(\)\/]+)/g, '<i style="color:red;"><b>&ndash;</b><a href="index.php?page=post&s=list&tags=$1">$1</a></i>  ') +
-					sameTags.join(' ').replace(/([\w\.\(\)\/]+)/g,'<a href="index.php?page=post&s=list&tags=$1">$1</a>');
+		var html =  addTags.join(' ').replace(regexp, '<b style="color:green;">+<a href="index.php?page=post&s=list&tags=$1">$1</a></b> ') +
+			delTags.join(' ').replace(regexp, '<i style="color:red;"><b>&ndash;</b><a href="index.php?page=post&s=list&tags=$1">$1</a></i>  ') +
+			sameTags.join(' ').replace(regexp,'<a href="index.php?page=post&s=list&tags=$1">$1</a>');
 
 		tdTags.innerHTML = html;
 	});
