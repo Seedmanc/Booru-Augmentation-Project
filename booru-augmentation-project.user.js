@@ -8,7 +8,7 @@
 // @include		http://*.booru.org/*index.php?page=comment*
 // @include		http://*.booru.org/*index.php?page=history*
 // @include		http://*.booru.org/*index.php?page=forum&s=view*
-// @include		http://*.booru.org/*index.php?page=account-options
+// @include		http://*.booru.org/*index.php?page=account-options*
 // @include		http://*.booru.org/*index.php?page=account&s=profile&uname=*
 // @grant		none
 // @run-at		document-body
@@ -36,6 +36,7 @@ var pages = {
 		'list': listPage
 	}
 };
+var currentBooru = document.location.host.split('.')[0];
 
 window.taglist = {};
 window.linklist = [];
@@ -169,8 +170,6 @@ function showScanner() {
 		'<div class="option" style="float:right; height:0; left:740px; position:absolute;"><table id="scanner" class="" style="width:680px;"><thead><tr><th colspan=2><center>Booru scanner</center></th></tr></thead><tbody></tbody></table></div>');
 	var table = $$('#scanner tbody')[0], Current = 0, start = 0;
 
-	Current = BAPopts.lastScanned || 0;
-
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block">Limit scope to query:</label><br>&nbsp;</td><td style="width:100%; "><input style="width:99%;padding:0;" type="text" name="tag" id="scanTags"/></td></tr>');
 	new Insertion.Bottom(table,
@@ -196,18 +195,22 @@ function showScanner() {
 			var b = new Blob([JSON.stringify(window[evt.target.id], null, '\t')], {type: typeof URL != 'undefined' ? 'text/plain' : 'application/octet-stream'});
 			var a = document.createElement('a');
 
-			a.download = evt.target.id + '.json';
+			a.download = evt.target.id.replace('list', ' list for ' + ($('scanTags').value ? '\'' + $('scanTags').value + '\' @ ' : '') +
+					currentBooru + 'booru, ' + Current + ' of ' + start + ' posts scanned') + '.json';
+			document.body.appendChild(a);
 
 			if (typeof URL != 'undefined') {
 				var fileURL = URL.createObjectURL(b);
 				a.href = fileURL;
 				a.click();
+				a.parentNode.removeChild(a);
 			} else {
 				var reader = new window.FileReader();
 				reader.readAsDataURL(b);
 				reader.onloadend = function () {
 					a.href = reader.result;
 					a.click();
+					a.parentNode.removeChild(a);
 				}
 			}
 		}
@@ -227,12 +230,12 @@ function showScanner() {
 	function scanPage(offset) {
 		var query = $('scanTags').value || 'all';
 
-		getPage('http://koe.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
+		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
 			Current = start - offset;
 			$('current').update(Current);
 			$$('progress')[0].value = Current;
 
-			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag;
+			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
 
 			tags.forEach(function (span) {
 				tag = span.querySelector('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
@@ -253,12 +256,20 @@ function showScanner() {
 				var score = data.split('score:')[1].split('rating')[0].trim();
 				var rating = data.split('rating:')[1].split('')[0].toLowerCase();
 				var src = v.querySelector('img').src;
+				var ext = src.split('.').last();
 				window.thumblist.push(src);
 				window.linklist.push(src.replace('thumbs', 'img').replace('thumbnails', 'images').replace('thumbnail_', ''));
 
 				var hash = src.split('thumbnail_')[1].split('.')[0];
 				var cluster = src.split('thumbnail')[1].replace(/\/+|s/g, '');
-				window.postlist[hash] = {c: Number(cluster), i: Number(id), r: rating, s: Number(score), t: itags};
+				window.postlist[hash] = {
+					c: Number(cluster),
+					e: ext,
+					i: Number(id),
+					r: rating,
+					s: Number(score),
+					t: itags
+				};
 			});
 
 			var next = html.querySelector('a[alt="back"]');
@@ -273,6 +284,12 @@ function showScanner() {
 
 				$('timeValue').update(("0" + mins).slice(-2) + ':' + ("0" + secs).slice(-2));
 			} else {
+				Object.keys(window.taglist).sort().forEach(function (key) {
+					temp[key] = window.taglist[key];
+				});
+
+				window.taglist = temp;
+
 				if ((Object.keys(window.taglist).length) && (query == 'all')) {
 					localStorage.setItem('BAPtags', JSON.stringify(window.taglist));
 				}
@@ -288,7 +305,7 @@ function showScanner() {
 	$('scanTags').onchange = function (evt) {
 		var query = (evt && evt.target.value.trim()) || 'all', lastpic;
 
-		getPage('http://koe.booru.org/index.php?page=post&s=list&tags=' + query, function (html) {
+		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query, function (html) {
 			start = html.querySelector('a[alt="last page"]');
 
 			if (html.querySelectorAll('span.thumb').length) {
