@@ -16,36 +16,41 @@
 // @noframes
 // ==/UserScript==
 
-var BAPtags = '';
-var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true, "showTags":false}');
+var BAPtags = {};
+var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true}');
 var pages = {
-	'account': {
-		'profile': function(){
+	'account-options':          optionsPage,
+	'account':                  {
+		'profile': function () {
 			document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
 		}
 	},
-	'account-options': optionsPage,
-	'alias': aliasPage,
-	'comment': linkify,
-	'forum': {
+	'alias':                    aliasPage,
+	'comment':                  linkify,
+	'forum':                    {
 		'view': linkify
 	},
 	'history&type=tag_history': historyPage,
-	'post': {
+	'post':                     {
 		'view': postPage,
 		'list': listPage
 	}
 };
 
+window.taglist = {};
+window.linklist = [];
+window.thumblist = [];
+window.postlist = {};
+
 if (!~document.location.href.indexOf('s=mass_upload')) {
 	if (document.readyState == 'loading') {
-		document.addEventListener('DOMContentLoaded', main, false)
+		document.addEventListener('DOMContentLoaded', main, false);
 	} else {
 		main();
 	}
 }
 
-function parseUrl(prefix, handlers){
+function parseUrl(prefix, handlers) {
 
 	for (var key in handlers) {
 		if (~document.location.href.indexOf(prefix + key)) {
@@ -87,30 +92,38 @@ function main() {
 			'}' +
 			'</style>'
 		);
-	} catch (any) {}
+	} catch (any) {
+	}
 }
 
 function optionsPage() {
-	var table = $$('div.option table')[0];
+	delete Array.prototype.toJSON;
+	var table = $$('div.option table tbody')[0];
 	var submit = $$('div.option input[type="submit"]')[0];
+	BAPtags = Object.keys(BAPtags).length && BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
-	new Insertion.Bottom(table, '<tr><td><label class="block">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></td><td><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
-	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>+solo</b></label><p>Mark green/add a solo tag if there are less than 2 existing tags</p></td><td><br><input class="BAPoption" id="solo" type="checkbox"/></td></tr>');
-	new Insertion.Bottom(table, '<tr><td><label class="block">Suggest <b>-tagme</b></label><p>Mark red an existing tagme tag for easier removal</p></td><td><br><input class="BAPoption" id="tagme" type="checkbox"/></td></tr>');
-	new Insertion.Bottom(table, '<tr><td><label class="block">Show complete tag list</label><p>Display here a list of all tags sorted by their amount of posts</p></td><td><br><input class="BAPoption" id="showTags" type="checkbox"/></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><div style="float:left; text-align:justify;"><label class="block" for="ansiOnly">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></div><div style="float:right"><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
+	new Insertion.Bottom(table, '<tr><td><div style="float:left; text-align:justify;"><label class="block" for="solo">Suggest <b>+solo</b></label><p>Mark green/add a solo tag if there are less than 2 existing tags</p></div><div style="float:right"><br><input class="BAPoption" id="solo" type="checkbox"/></td>\
+		<td><div style="float:left; text-align:justify; padding-left:100px"><label class="block" for="tagme">Suggest <b>-tagme</b></label><p>Mark red an existing tagme tag for easier removal</p></div><div><br><input class="BAPoption" id="tagme" type="checkbox"/></div></td></tr>');
 
-	new Insertion.After($$('form > p')[0], '<div style="float:right; height:0; left:720px; position:absolute;"><table id="allTags" class="highlightable" style="width:680px;"><caption>Tag list by post amount</caption><thead><tr><th>tag</th><th>posts</th></tr></thead><tbody></tbody></table></div>');
+	new Insertion.Bottom(table, '<tr><td><div style="float:left; text-align:justify;"><label class="block" for="showTags">Show complete tag list</label><p>Display here a list of all tags sorted by their amount of posts</p></div><div style="float:right"><br><input id="showTags" type="radio" name="tools"/></div></td>\
+		<td><div style="float:left; text-align:justify; padding-left:100px"><label class="block" for="showScanner">Show Booru Scanner</label><p>Allows to fetch complete post and tag data from the booru, as well as a list of image links.</p></div><div><br><input id="showScanner" type="radio" name="tools" checked/></div></td></tr>');
+
 
 	Object.keys(BAPopts).each(function (opt) {
-		$$('input.BAPoption#' + opt)[0].checked = BAPopts[opt];
+		if ($$('input.BAPoption#' + opt)[0]) {
+			$$('input.BAPoption#' + opt)[0].checked = BAPopts[opt];
+		}
 	});
 
 	$('showTags').onchange = function (that) {
-		showTags(that.target.checked);
+		showTags();
 	};
 
-	showTags(BAPopts.showTags);
+	$('showScanner').onchange = function (that) {
+		showScanner();
+	};
 
 	submit.onclick = function () {
 		$$('input.BAPoption').each(function (el) {
@@ -118,21 +131,212 @@ function optionsPage() {
 		});
 		localStorage.BAPopts = JSON.stringify(BAPopts);
 	};
+	showScanner();
 }
 
-function showTags(show) {
-	var allTags = $('allTags');
-
-	if (!show) {
-		allTags.hide();
+function getPage(url, callback) {
+	if (!url) {
 		return;
 	}
-	allTags.show();
+
+	new Ajax.Request(url, {
+		method:    'get',
+		onSuccess: function (xhr) {
+			var tmplt = document.createElement('template');
+			tmplt.innerHTML = xhr.responseText;
+			var html = (tmplt.content || tmplt);
+
+			if (typeof callback == 'function') {
+				callback(html);
+			}
+		}
+	});
+}
+
+function showScanner() {
+
+	if ($('allTags')) {
+		$('allTags').up('.option').hide();
+	}
+
+	if ($('scanner')) {
+		$('scanner').up('.option').show();
+
+		return;
+	}
+
+	new Insertion.After($$('form > p')[0],
+		'<div class="option" style="float:right; height:0; left:740px; position:absolute;"><table id="scanner" class="" style="width:680px;"><thead><tr><th colspan=2><center>Booru scanner</center></th></tr></thead><tbody></tbody></table></div>');
+	var table = $$('#scanner tbody')[0], Current = 0, start = 0;
+
+	Current = BAPopts.lastScanned || 0;
+
+	new Insertion.Bottom(table,
+		'<tr><td><label class="block">Limit scope to query:</label><br>&nbsp;</td><td style="width:100%; "><input style="width:99%;padding:0;" type="text" name="tag" id="scanTags"/></td></tr>');
+	new Insertion.Bottom(table,
+		'<tr><td><label class="block">Initiate scanning</label><br>&nbsp;</td><td style="text-align:center; width:100%; "><input type="button" style="width:100%;" id="start" value="Start"/></td></tr>');
+	new Insertion.Bottom(table,
+		'<tr><td><label class="block">Scan progress</label><p style="margin:0"><span id="current">' + Current + '</span>/<span id="total">' + start + '</span><span id="time" style="display:none;">, &nbsp;time left: <span id="timeValue"/></span></p></td>\
+		<td style="vertical-align:middle; width:100%;"><progress style="width:100%;" value="' + Current + '" max="' + start + '"></progress></td></tr>');
+	new Insertion.Bottom(table,
+		'<tr><td><label class="block"><br>Download results in .json</label><p>Incomplete until scanning finishes</p></td><td style="width:100%; "><table id="dllinks" class="highlightable" style="font-weight:bold;width:100%; text-align:center;">\
+			<tr><td><a href="#" id="taglist" class="dllink">post amounts by tag</a></td></tr>\
+			<tr><td><a href="#" id="postlist" class="dllink">complete post data by id</a></td></tr>\
+			<tr><td><a href="#" id="linklist" class="dllink">link list to full images</a></td></tr>\
+			<tr><td><a href="#" id="thumblist" class="dllink">link list to thumbnails</a></td></tr>\
+		</table>\
+		</td></tr>');
+
+	$('scanTags').onfocus = function () {
+		loadOptions(this);
+	};
+
+	$('dllinks').onclick = function (evt) {
+		if (evt.target.className == "dllink") {
+			var b = new Blob([JSON.stringify(window[evt.target.id], null, '\t')], {type: typeof URL != 'undefined' ? 'text/plain' : 'application/octet-stream'});
+			var a = document.createElement('a');
+
+			a.download = evt.target.id + '.json';
+
+			if (typeof URL != 'undefined') {
+				var fileURL = URL.createObjectURL(b);
+				a.href = fileURL;
+				a.click();
+			} else {
+				var reader = new window.FileReader();
+				reader.readAsDataURL(b);
+				reader.onloadend = function () {
+					a.href = reader.result;
+					a.click();
+				}
+			}
+		}
+	};
+
+	$('start').onclick = function () {
+		$('start').disable();
+		$('scanTags').disable();
+		$('time').show();
+
+		window.linklist = [];
+		window.thumblist = [];
+
+		scanPage(start);
+	};
+
+	function scanPage(offset) {
+		var query = $('scanTags').value || 'all';
+
+		getPage('http://koe.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
+			Current = start - offset;
+			$('current').update(Current);
+			$$('progress')[0].value = Current;
+
+			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag;
+
+			tags.forEach(function (span) {
+				tag = span.querySelector('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
+				window.taglist[tag] = Number(span.textContent.split(/\s+/).last());
+				BAPtags[tag] = window.taglist[tag];
+			});
+
+			if (Object.keys(BAPtags).length && ((offset / 20) % 2)) {
+				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+			}
+
+			var ilinks = html.querySelectorAll('.content .thumb > a');
+
+			$A(ilinks).forEach(function (v) {
+				var id = v.id.replace('p', '');
+				var data = v.querySelector('img').title.trim();
+				var itags = data.split('score')[0].trim().split(/\s+/).sort();
+				var score = data.split('score:')[1].split('rating')[0].trim();
+				var rating = data.split('rating:')[1].split('')[0].toLowerCase();
+				var src = v.querySelector('img').src;
+				window.thumblist.push(src);
+				window.linklist.push(src.replace('thumbs', 'img').replace('thumbnails', 'images').replace('thumbnail_', ''));
+
+				var hash = src.split('thumbnail_')[1].split('.')[0];
+				var cluster = src.split('thumbnail')[1].replace(/\/+|s/g, '');
+				window.postlist[hash] = {c: Number(cluster), i: Number(id), r: rating, s: Number(score), t: itags};
+			});
+
+			var next = html.querySelector('a[alt="back"]');
+			next = (next && next.getAttribute('href').split("pid=").last()) || '';
+
+			if (next && start) {
+				window.setTimeout(function () {
+					scanPage(next);
+				}, 500);
+				var mins = Math.floor(0.6 * offset / 20 / 60);
+				var secs = Math.floor((0.6 * offset / 20) % 60);
+
+				$('timeValue').update(("0" + mins).slice(-2) + ':' + ("0" + secs).slice(-2));
+			} else {
+				if ((Object.keys(window.taglist).length) && (query == 'all')) {
+					localStorage.setItem('BAPtags', JSON.stringify(window.taglist));
+				}
+
+				$('start').enable();
+				$('scanTags').enable();
+				$('time').hide();
+			}
+		});
+
+	}
+
+	$('scanTags').onchange = function (evt) {
+		var query = (evt && evt.target.value.trim()) || 'all', lastpic;
+
+		getPage('http://koe.booru.org/index.php?page=post&s=list&tags=' + query, function (html) {
+			start = html.querySelector('a[alt="last page"]');
+
+			if (html.querySelectorAll('span.thumb').length) {
+				$('total').up('p').style.color = "";
+				$('start').enable();
+
+				start = parseInt((start && start.getAttribute('href').split("pid=").last()) || '1', 10);
+				$('total').update(start);
+				$$('progress')[0].max = start;
+				$('current').update('0');
+			} else {
+				$('current').update('Nothing ');
+				$('total').update(' found');
+				$('total').up('p').style.color = "#FF0000";
+				$('start').disable();
+			}
+		});
+	};
+
+	$('scanTags').onchange();
+
+}
+
+function showTags() {
+	var allTags = $('allTags');
+
+	if (!allTags) {
+		new Insertion.After($$('form > p')[0],
+			'<div class="option" style="float:right; height:0; left:740px; position:absolute;">\
+				<table id="allTags" class="highlightable" style="width:680px;">\
+					<caption>Tag list by post amount</caption>\
+					<thead>\
+						<tr>\
+							<th>tag</th><th>posts</th>\
+						</tr>\
+					</thead>\
+					<tbody></tbody>\
+				</table>\
+			</div>');
+		allTags = $('allTags');
+	} else {
+		allTags.up('.option').show();
+	}
+	$('scanner').up('.option').hide();
 
 	if (allTags.down('a')) {
 		return;
 	}
-	BAPtags = BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	Object.keys(BAPtags).sort(function (a, b) {
 		a = BAPtags[a];
@@ -147,8 +351,9 @@ function showTags(show) {
 			}
 		}
 	});
-	if (BAPtags != {})
+	if (Object.keys(BAPtags).length) {
 		localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+	}
 }
 
 function loadOptions(that) {
@@ -158,18 +363,19 @@ function loadOptions(that) {
 
 function storeTags() {
 	var tags = $$('#tag_list ul li span');
-	var newTags;
+	var newtags;
 
-	BAPtags = BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
+	BAPtags = Object.keys(BAPtags).length && BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	tags.each(function (span) {
 		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
 		BAPtags[tag] = Number(span.textContent.split(/\s+/).last());
 	});
 
-	newTags = JSON.stringify(BAPtags);
-	if (newTags != {})
-		localStorage.setItem('BAPtags', newTags);
+	newtags = JSON.stringify(BAPtags);
+	if (Object.keys(newtags).length) {
+		localStorage.setItem('BAPtags', newtags);
+	}
 
 	$$('input[name^="tag"]')[0].onfocus = function () {
 		loadOptions(this);
@@ -236,8 +442,9 @@ function listPage() {
 
 		if (t.length == 1) {
 			delete BAPtags[t[0]];
-			if (BAPtags != {})
+			if (Object.keys(BAPtags).length) {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+			}
 		}
 	}
 
@@ -308,7 +515,7 @@ function listPage() {
 	var next = current.next();
 
 	if (next == newPos) {
-		next = current
+		next = current;
 	} else {
 		paginator.insertBefore(current, newPos);
 	}
@@ -412,9 +619,9 @@ function statisticsArea(strong) {
 					pointer.data = '';
 				} else {
 					if (~split[0].indexOf('By')) {
-						var userlink = split[1].trim() == 'Anonymous' ? 
-							'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' : 
-							'<a href="index.php?page=account_profile&uname=' + split[1].trim() + '">' + split[1].trim() + '</a>';
+						var userlink = split[1].trim() == 'Anonymous' ?
+							'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' :
+						'<a href="index.php?page=account_profile&uname=' + split[1].trim() + '">' + split[1].trim() + '</a>';
 						new Insertion.Before(pointer.nextSibling, userlink);
 						pointer.data = split[0] + ': ';
 						split[1] = ' ';
@@ -550,8 +757,9 @@ function mySubmit() {
 			br = $$('#tag_list ul br')[0];
 			br.parentNode.removeChild(br);
 
-			if (BAPtags != {})
+			if (Object.keys(BAPtags).length) {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
+			}
 
 			searchField();
 		},
@@ -582,6 +790,7 @@ function addTag(that) {
 	that.next('span.customTag').replace('<a href="index.php?page=post&s=list&tags=' + tag + '">' + tag.replace(/_/g, ' ') + '</a>');
 	$('tags').value += ' ' + tag;
 	BAPtags[tag] = Number(BAPtags[tag] || 0) + 1;
+
 	showButton();
 }
 
@@ -592,6 +801,7 @@ function isANSI(s) {
 	s.each(function (v) {
 		is = is && (/[\u0000-\u00ff]/.test(v));
 	});
+
 	return is;
 }
 
@@ -609,6 +819,7 @@ function applyEdit(that) {
 	var exists = existing.some(function (tag) {
 		if (tag.textContent.trim().replace(/\s+/g, '_') == value) {
 			element = tag;
+
 			return true;
 		}
 	});
@@ -620,6 +831,7 @@ function applyEdit(that) {
 			element.up('li').style.backgroundColor = '';
 		}, 1000);
 		that.focus();
+
 		return;
 	}
 
@@ -820,7 +1032,7 @@ function historyPage() {
 	rows.each(function (tr, i) { // it's that simple
 		var tdTags = tr.select('td')[4];
 
-		tr.select('td')[2].style="white-space: nowrap;";
+		tr.select('td')[2].style = "white-space: nowrap;";
 
 		var tags1 = tdTags.textContent.trim().split(' ');
 		var tags2 = rows[i + 1] ? rows[i + 1].select('td')[4].textContent.trim().split(' ') : tags1;
@@ -847,9 +1059,9 @@ function historyPage() {
 		}
 
 		// this needs testing for tags with weird characters inside, although you shouldn't be having those anyway
-		var html =  addTags.join(' ').replace(regexp, '<b style="color:green;">+<a href="index.php?page=post&s=list&tags=$1">$1</a></b> ') +
+		var html = addTags.join(' ').replace(regexp, '<b style="color:green;">+<a href="index.php?page=post&s=list&tags=$1">$1</a></b> ') +
 			delTags.join(' ').replace(regexp, '<i style="color:red;"><b>&ndash;</b><a href="index.php?page=post&s=list&tags=$1">$1</a></i>  ') +
-			sameTags.join(' ').replace(regexp,'<a href="index.php?page=post&s=list&tags=$1">$1</a>');
+			sameTags.join(' ').replace(regexp, '<a href="index.php?page=post&s=list&tags=$1">$1</a>');
 
 		tdTags.innerHTML = html;
 	});
