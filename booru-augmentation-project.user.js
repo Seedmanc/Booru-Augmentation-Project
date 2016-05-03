@@ -180,7 +180,7 @@ function showScanner() {
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block"><br>Download results in .json</label><p>Incomplete until scanning finishes</p></td><td style="width:100%; "><table id="dllinks" class="highlightable" style="font-weight:bold;width:100%; text-align:center;">\
 			<tr><td><a href="#" id="taglist" class="dllink">post amounts by tag</a></td></tr>\
-			<tr><td><a href="#" id="postlist" class="dllink">complete post data by id</a></td></tr>\
+			<tr><td><a href="#" id="postlist" class="dllink">complete post data by hash</a></td></tr>\
 			<tr><td><a href="#" id="linklist" class="dllink">link list to full images</a></td></tr>\
 			<tr><td><a href="#" id="thumblist" class="dllink">link list to thumbnails</a></td></tr>\
 		</table>\
