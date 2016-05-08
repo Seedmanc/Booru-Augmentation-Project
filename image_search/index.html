@@ -1,0 +1,235 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BAP - search by image</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+	<script src="controller.js"></script>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+
+	<style>
+		input[type=file], label {
+			display: inline-block;
+		}
+
+		td, th {
+			text-align: center;
+			vertical-align: middle !important;
+			padding: 2px !important;
+		}
+
+		img {
+			max-width: 100px;
+			max-height: 100px;
+			min-height: 100px;
+		}
+
+		td.hash {
+			font-family: monospace;
+		}
+
+		#images-even td.tags {
+			text-align: right;
+		}
+
+		#images-odd td.tags {
+			text-align: left;
+		}
+
+		td.tags, .tags-container {
+			max-height: 100px;
+			overflow-y: auto;
+		}
+
+		.fail {
+			margin-left: 5px;
+			margin-right: 10px;
+			float: left;
+			border: 1px dotted red;
+			background-color: #f9f9f9;
+		}
+
+		.fail img {
+			padding-right: 5px;
+			max-width: 100px;
+			max-height: 100px;
+		}
+
+		.filename {
+			float: right;
+			padding-top: 33px;
+		}
+
+		.form-group {
+			margin-bottom: 0 !important;
+		}
+
+		.hover {
+			background-color: #FFD;
+		}
+
+		a, a:visited {
+			color: #006FFA;
+			text-decoration: none !important;
+			font-weight: bold;
+		}
+
+		a:hover, a:focus {
+			color: #33CFFF;
+		}
+
+		.tags-container a {
+			font-weight: normal;
+		}
+	</style>
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl">
+<div class="container-fluid">
+	<div class="row" style="padding-top:5px;">
+		<fieldset class="form-group">
+			<div class="col-sm-4">
+				<label for="db">Load post database.json:&nbsp;</label>
+				<input type="file" id="db" accept=".json" class="form-control-file" style="width:50%"/>
+			</div>
+			<div class="col-sm-6">
+				<label for="files">Select <select id="mode">
+					<option value="images" selected>images</option>
+					<option value="folder">folder</option>
+				</select> to search:&nbsp;</label>
+				<input style="width:70%" disabled type="file" id="files" multiple class="form-control-file" accept="image/*"/>
+			</div>
+			<div class="col-sm-2" style="text-align:right">
+				<label><input type="checkbox" id="missing"> missing only</label>
+			</div>
+		</fieldset>
+	</div>
+	<div class="row" ng-if="fail.length">
+		<div class="row text-center">
+			<div class="col-sm-12 text-center" style="font-weight:bold; padding-top:5px;">The following images has	failed to identify (hash missing from filename or database):
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-12">
+				<div ng-repeat="image in fail" class="fail"><img ng-src="{{image.src}}"/>
+					<span class="filename">
+						<span ng-repeat="name in image.name">{{name}}<br></span>
+					</span>
+				</div>
+			</div>
+			<a href="#" id="selectMissing" ng-click="sm()">&nbsp;\t&nbsp;Download .bat to separate these images</a>
+		</div>
+	</div>
+	<hr>
+	<div class="row">
+		<div class="col-sm-12 text-center">
+			<a href="#" ng-click="orderByField = 'size'; reverseSort = !reverseSort">▴sort by size/similarity▾</a>
+		</div>
+		<div class="col-sm-6 table-responsive" style="padding-right:0;">
+			<table class="table table-striped table-condensed" id="images-even">
+				<colgroup valign="middle">
+					<col width="0">
+					<col width="0">
+					<col width="100%">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>hash</th>
+						<th width="100%">list of tags</th>
+						<th><a href="#" ng-click="orderByField = 'tagnum'; reverseSort = !reverseSort">▴tag#▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'score'; reverseSort = !reverseSort">▴score▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'ext'; reverseSort = !reverseSort">▴type▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'post'; reverseSort = !reverseSort">▴post▾</a></th>
+						<th>image</th>
+					</tr>
+				</thead>
+				<tbody>
+				<tr ng-repeat="image in imagesEven | orderBy:orderByField:reverseSort track by $index"
+				    class="text-center">
+					<td>{{($index+1)*2-1}}</td>
+					<td class="hash">
+						<div ng-repeat="hash in image.hash">{{hash}}<br></div>
+					</td>
+					<td class="tags">
+						<div class="tags-container">
+							<a ng-repeat="tag in image.tags" href="http://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}" target="_blank">{{tag}} </a>
+						</div>
+					</td>
+					<td>{{image.tags.length}}</td>
+					<td>{{image.score}}</td>
+					<td>{{image.ext}}</td>
+					<td><a target="_blank"
+					       href="http://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
+					</td>
+					<td><a target="_blank"
+					       href="http://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
+						<img ng-src="{{image.pic}}"/></a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="col-sm-6 table-responsive" style="padding-left:0;">
+			<table class="table table-striped table-condensed" id="images-odd">
+				<colgroup valign="middle">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+					<col width="0">
+					<col width="100%">
+					<col width="0">
+					<col width="0">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>image</th>
+						<th><a href="#" ng-click="orderByField = 'post'; reverseSort = !reverseSort;">▴post▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'ext'; reverseSort = !reverseSort">▴type▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'score'; reverseSort = !reverseSort">▴score▾</a></th>
+						<th><a href="#" ng-click="orderByField = 'tagnum'; reverseSort = !reverseSort">▴tag#▾</a></th>
+						<th width="100%">list of tags</th>
+						<th>hash</th>
+						<th>#</th>
+					</tr>
+				</thead>
+				<tbody>
+				<tr ng-repeat="image in imagesOdd | orderBy:orderByField:reverseSort track by $index "
+				    class="text-center">
+					<td><a target="_blank"
+					       href="http://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
+						<img ng-src="{{image.pic}}"/></a>
+					</td>
+					<td><a target="_blank"
+					       href="http://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
+					</td>
+					<td>{{image.ext}}</td>
+					<td>{{image.score}}</td>
+					<td>{{image.tags.length}}</td>
+					<td class="tags">
+						<div class="tags-container">
+							<a ng-repeat="tag in image.tags" href="http://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}"
+						                               target="_blank">{{tag}} </a>
+						</div>
+					</td>
+					<td class="hash">
+						<div ng-repeat="hash in image.hash">{{hash}}<br></div>
+					</td>
+					<td>{{($index+1)*2}}</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+</div>
+</body>
+</html>
