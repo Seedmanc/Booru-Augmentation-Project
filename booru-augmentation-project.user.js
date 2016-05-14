@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name		Booru Augmentation Project
 // @description	Enhance your basic booru experience
-// @version		1.0
+// @version		1.0.1
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
@@ -199,7 +199,7 @@ function showScanner() {
 			<p style="width:100%; text-align:justify;">For example, here is how you can search for similar/duplicating images on your booru:</p><ol><li>Get the complete post DB by hash and the list of links to thumbnails.</li>\
 				<li>Download all thumbnails by feeding the list to some mass downloader like JDownloader</li>\
 				<li>Run a duplicate finder software (like Visipics) on the downloaded images, moving the duplicates into a separate folder</li>\
-				<li>Open the hash db and the found images in the <a href="http://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
+				<li>Open the hash db and the found images in the <a target="_blank" href="http://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
 			Image Search sorts pictures by size, which in case of similar thumbnails groups duplicates together, allowing for their quick localization.<br>\
 			Note: in Chrome amount of pictures opened simulaneously might be quite limited by the collective length of their filenames. You can open a folder of images instead.\
 		</tbody></table></div>');
