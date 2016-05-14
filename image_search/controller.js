@@ -1,6 +1,6 @@
 angular.module('myApp', [])
 	.controller('myCtrl', function ($scope) {
-		$scope.booruName = document.location.host.split('.')[0];
+		$scope.booruName = document.location.host.split('?booru=')[1];
 		$scope.orderByField = 'size';
 		$scope.reverseSort = false;
 		$scope.imagesEven = [];

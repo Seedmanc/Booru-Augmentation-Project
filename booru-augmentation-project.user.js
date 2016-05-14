@@ -43,7 +43,15 @@ window.linklist = [];
 window.thumblist = [];
 window.postlist = {};
 
-if (!~document.location.href.indexOf('s=mass_upload')) {
+if (~document.location.href.indexOf('s=search_image')) {
+	var frame = document.createElement('iframe');
+
+	frame.src = 'https://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/image_search/index.html?booru=' + currentBooru;
+	frame.width = "100%";
+	frame.height = "95%";
+	document.body.appendChild(frame);
+
+} else if (!~document.location.href.indexOf('s=mass_upload')) {
 	if (document.readyState == 'loading') {
 		document.addEventListener('DOMContentLoaded', main, false);
 	} else {
@@ -186,6 +194,16 @@ function showScanner() {
 		</table>\
 		</td></tr>');
 
+	new Insertion.After($('scanner'),
+		'<table id="sbi" style="width:680px;"><thead><tr><th><center>Search by image (hash)</center></th></tr></thead><tbody><tr><td><p style="width:100%; text-align:justify;">Having collected the complete post database by hash allows you to do advanced post searching.</p>\
+			<p style="width:100%; text-align:justify;">For example, here is how you can search for similar/duplicating images on your booru:</p><ol><li>Get the complete post DB by hash and the list of links to thumbnails.</li>\
+				<li>Download all thumbnails by feeding the list to some mass downloader like JDownloader</li>\
+				<li>Run a duplicate finder software (like Visipics) on the downloaded images, moving the duplicates into a separate folder</li>\
+				<li>Open the hash db and the found images in the <a href="http://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
+			Image Search sorts pictures by size, which in case of similar thumbnails groups duplicates together, allowing for their quick localization.<br>\
+			Note: in Chrome amount of pictures opened simulaneously might be quite limited by the collective length of their filenames. You can open a folder of images instead.\
+		</tbody></table></div>');
+
 	$('scanTags').onfocus = function () {
 		loadOptions(this);
 	};
@@ -195,8 +213,7 @@ function showScanner() {
 			var b = new Blob([JSON.stringify(window[evt.target.id], null, '\t')], {type: typeof URL != 'undefined' ? 'text/plain' : 'application/octet-stream'});
 			var a = document.createElement('a');
 
-			a.download = evt.target.id.replace('list', ' list for ' + ($('scanTags').value ? '\'' + $('scanTags').value + '\' @ ' : '') +
-					currentBooru + 'booru, ' + Current + ' of ' + start + ' posts scanned') + '.json';
+			a.download = evt.target.id.replace('list', ' list for ' + ($('scanTags').value ? '\'' + $('scanTags').value + '\' @ ' : '') + currentBooru + 'booru, ' + Current + ' of ' + start + ' posts scanned') + '.json';
 			document.body.appendChild(a);
 
 			if (typeof URL != 'undefined') {
