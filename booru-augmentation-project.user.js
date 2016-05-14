@@ -46,7 +46,7 @@ window.postlist = {};
 if (~document.location.href.indexOf('s=search_image')) {
 	var frame = document.createElement('iframe');
 
-	frame.src = 'https://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/image_search/index.html?booru=' + currentBooru;
+	frame.src = 'http://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/image_search/index.html?booru=' + currentBooru;
 	frame.width = "100%";
 	frame.height = "95%";
 	document.body.appendChild(frame);

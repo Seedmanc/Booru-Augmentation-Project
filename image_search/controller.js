@@ -94,7 +94,7 @@ angular.module('myApp', [])
 						image.cluster = $scope.db[hash].c;
 						image.post = $scope.db[hash].i;
 						image.size = file.size / (image.ext == 'png' ? 3 : 1);
-						image.pic = "https://thumbs.booru.org/" + $scope.booruName + "/thumbnails/" + image.cluster + "/thumbnail_" + image.hash.join('') + "." + image.ext;
+						image.pic = "http://thumbs.booru.org/" + $scope.booruName + "/thumbnails/" + image.cluster + "/thumbnail_" + image.hash.join('') + "." + image.ext;
 
 						images.push(image);
 					}
