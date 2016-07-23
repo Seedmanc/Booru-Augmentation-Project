@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name		Booru Augmentation Project
 // @description	Enhance your basic booru experience
-// @version		1.0.1
+// @version		1.0.9
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
@@ -45,6 +45,8 @@ window.postlist = {};
 
 if (~document.location.href.indexOf('s=search_image')) {
 	var frame = document.createElement('iframe');
+
+	document.title = 'BAP - Search by image';
 
 	frame.src = 'http://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/image_search/index.html?booru=' + currentBooru;
 	frame.width = "100%";
@@ -126,11 +128,11 @@ function optionsPage() {
 		}
 	});
 
-	$('showTags').onchange = function (that) {
+	$('showTags').onchange = function () {
 		showTags();
 	};
 
-	$('showScanner').onchange = function (that) {
+	$('showScanner').onchange = function () {
 		showScanner();
 	};
 
@@ -142,6 +144,56 @@ function optionsPage() {
 	};
 	showScanner();
 }
+
+function removeTagme(offset) {
+	getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=tagme&pid=' + offset, function (html) {
+		var failure = false;
+		$('rttProgress').value = offset || 1;
+		var total = html.querySelector('a[alt="last page"]'), completed = 0;
+		var next = html.querySelector('a[alt="next"]');
+
+		next = (next && next.getAttribute('href').split("pid=").last()) || 0;
+
+		total = (total && total.getAttribute('href').split("pid=").last()) || 0;
+
+		if (offset === 0) {
+			$('rttProgress').max = total || 1;
+		}
+
+		var ilinks = html.querySelectorAll('.content .thumb > a');
+
+		$A(ilinks).forEach(function (v) {
+			if (failure) return false;
+			setTimeout(function(){
+				getPage(v.href, function (html2) {
+					if (failure) return false;
+					var form = html2.querySelector('#edit_form');
+
+					form.tags.value = form.tags.value.replace(/^tagme | tagme$| tagme /i,' ');
+					form.pconf.value = 1;
+
+					setTimeout(function(){
+						form.request({
+							onComplete: function () {
+								completed++;
+								if (completed >= ilinks.length && next) {
+									setTimeout(function(){removeTagme(next)}, 500 + Math.random()*1000);
+								}
+							},
+							onFailure:  function () {
+								console.log('error removing tagme at post ' + v.href);
+								$('removeTagme').style.color = 'red';
+								failure=true;
+								$('removeTagme').enable();
+							}
+						});
+					}, 500+Math.random*1000);
+				})
+			}, 500+Math.random()*2000);
+		});
+	})
+}
+//TODO sequential execution in case of booru limitations
 
 function getPage(url, callback) {
 	if (!url) {
@@ -175,16 +227,16 @@ function showScanner() {
 	}
 
 	new Insertion.After($$('form > p')[0],
-		'<div class="option" style="float:right; height:0; left:740px; position:absolute;"><table id="scanner" class="" style="width:680px;"><thead><tr><th colspan=2><center>Booru scanner</center></th></tr></thead><tbody></tbody></table></div>');
+		'<div class="option" style="float:right; height:0; left:740px; position:absolute;"><table id="scanner" class="" style="width:680px; margin-bottom:0;"><thead><tr><th colspan=2><center>Booru scanner</center></th></tr></thead><tbody></tbody></table></div>');
 	var table = $$('#scanner tbody')[0], Current = 0, start = 0;
 
 	new Insertion.Bottom(table,
-		'<tr><td><label class="block">Limit scope to query:</label><br>&nbsp;</td><td style="width:100%; "><input style="width:99%;padding:0;" type="text" name="tag" id="scanTags"/></td></tr>');
+		'<tr><td><label class="block">Limit scope to query:</label><br>&nbsp;</td><td style="width:100%; "><input style="width:99%;padding:0;" type="text" name="tag" id="scanTags" placeholder="tag list or a # of pages to scan"/></td></tr>');
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block">Initiate scanning</label><br>&nbsp;</td><td style="text-align:center; width:100%; "><input type="button" style="width:100%;" id="start" value="Start"/></td></tr>');
 	new Insertion.Bottom(table,
-		'<tr><td><label class="block">Scan progress</label><p style="margin:0"><span id="current">' + Current + '</span>/<span id="total">' + start + '</span><span id="time" style="display:none;">, &nbsp;time left: <span id="timeValue"/></span></p></td>\
-		<td style="vertical-align:middle; width:100%;"><progress style="width:100%;" value="' + Current + '" max="' + start + '"></progress></td></tr>');
+		'<tr><td><label class="block">Scan progress</label><p style="margin:0"><span id="current">' + Current + ' posts remaining </span><span id="time" style="display:none;">, &nbsp;time left: <span id="timeValue"/></span></p></td>\
+		<td style="vertical-align:middle; width:100%;"><progress id="scanProgress" style="width:100%;" value="' + Current + '" max="' + start + '"></progress></td></tr>');
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block"><br>Download results in .json</label><p>Incomplete until scanning finishes</p></td><td style="width:100%; "><table id="dllinks" class="highlightable" style="font-weight:bold;width:100%; text-align:center;">\
 			<tr><td><a href="#" id="taglist" class="dllink">post amounts by tag</a></td></tr>\
@@ -195,14 +247,23 @@ function showScanner() {
 		</td></tr>');
 
 	new Insertion.After($('scanner'),
-		'<table id="sbi" style="width:680px;"><thead><tr><th><center>Search by image (hash)</center></th></tr></thead><tbody><tr><td><p style="width:100%; text-align:justify;">Having collected the complete post database by hash allows you to do advanced post searching.</p>\
-			<p style="width:100%; text-align:justify;">For example, here is how you can search for similar/duplicating images on your booru:</p><ol><li>Get the complete post DB by hash and the list of links to thumbnails.</li>\
-				<li>Download all thumbnails by feeding the list to some mass downloader like JDownloader</li>\
-				<li>Run a duplicate finder software (like Visipics) on the downloaded images, moving the duplicates into a separate folder</li>\
+		'<table id="sbi" style="width:680px; "><thead><tr><th><center>Search by image (hash)</center></th></tr></thead><tbody><tr><td><p style="width:100%; text-align:justify;">Having the complete post DB allows you to do the advanced post searching.</p>\
+			<p style="width:100%; text-align:justify;">For example, here is how you can search for duplicating images at your booru:</p><ol><li>Get the complete post DB by hash and the list of links to thumbnails.</li>\
+				<li>DL all thumbs by feeding the list to some mass downloader</li>\
+				<li>Run a duplicate finder software on the thumbs, moving all dupes to a folder</li>\
 				<li>Open the hash db and the found images in the <a target="_blank" href="http://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
-			Image Search sorts pictures by size, which in case of similar thumbnails groups duplicates together, allowing for their quick localization.<br>\
-			Note: in Chrome amount of pictures opened simulaneously might be quite limited by the collective length of their filenames. You can open a folder of images instead.\
+			Note: in Chrome the amount of pictures opened simulaneously might be quite limited by their collective filename length. You can open a folder of images instead.\
 		</tbody></table></div>');
+
+	new Insertion.After($('sbi'),
+		'<table id="rtt" style="width:680px; "><thead><tr><th colspan="2"><center>Remove <i>tagme</i></center></th></tr></thead><tbody><tr><td colspan="2"><p style="width:100%; text-align:justify;">Booru automatically adds the "tagme" tag if your uploads have less than 5 tags. You can\'t turn that off, however, you can batch-delete that tag from the posts that have it.</p></tbody></table></div>');
+	new Insertion.Bottom($('rtt'),
+		'<tr><td><label class="block"><input type="button" style="width:100%;" id="removeTagme" value="Remove tagme"/></label></td><td style="text-align:center; width:100%; vertical-align:middle;"><progress id="rttProgress" style="width:100%;" value="0" max="'+ (BAPtags.tagme || 0) +'"></progress></td></tr>');
+
+	$('removeTagme').onclick = function () {
+		$('removeTagme').disable();
+		removeTagme(0);
+	};
 
 	$('scanTags').onfocus = function () {
 		loadOptions(this);
@@ -212,8 +273,10 @@ function showScanner() {
 		if (evt.target.className == "dllink") {
 			var b = new Blob([JSON.stringify(window[evt.target.id], null, '\t')], {type: typeof URL != 'undefined' ? 'text/plain' : 'application/octet-stream'});
 			var a = document.createElement('a');
+			var scanQuery = $('scanTags').value.trim();
+			var isNum = scanQuery && /^\d+$/.test(scanQuery);
 
-			a.download = evt.target.id.replace('list', ' list for ' + ($('scanTags').value ? '\'' + $('scanTags').value + '\' @ ' : '') + currentBooru + 'booru, ' + Current + ' of ' + start + ' posts scanned') + '.json';
+			a.download = evt.target.id.replace('list', ' list for ' + (scanQuery ? (isNum ? (scanQuery + ' posts @ ') : ('\'' + scanQuery + '\' @ ')) : '') + currentBooru + 'booru' + isNum ? '' : (', ' + (start - Current) + ' of ' + start + ' posts scanned')) + '.json';
 			document.body.appendChild(a);
 
 			if (typeof URL != 'undefined') {
@@ -245,12 +308,19 @@ function showScanner() {
 	};
 
 	function scanPage(offset) {
-		var query = $('scanTags').value || 'all';
+		var query = $('scanTags').value;
+		var isNum = query && /^\d+$/.test(query);
+		var limit;
+
+		if (isNum) {
+			limit = parseInt(query, 10);
+			query = 'all';
+		}
 
 		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
-			Current = start - offset;
-			$('current').update(Current);
-			$$('progress')[0].value = Current;
+			Current = offset;
+			$('current').update(Current + ' posts remaining ');
+			$('scanProgress').value = start - Current;
 
 			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
 
@@ -307,7 +377,7 @@ function showScanner() {
 
 				window.taglist = temp;
 
-				if ((Object.keys(window.taglist).length) && (query == 'all')) {
+				if ((Object.keys(window.taglist).length) && (query == 'all') && !isNum) {
 					localStorage.setItem('BAPtags', JSON.stringify(window.taglist));
 				}
 
@@ -320,26 +390,42 @@ function showScanner() {
 	}
 
 	$('scanTags').onchange = function (evt) {
-		var query = (evt && evt.target.value.trim()) || 'all', lastpic;
+		var query = (evt && evt.target.value.trim()), lastpic;
+		var isNum = query && /^\d+$/.test(query);
+		var limit;
 
-		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query, function (html) {
-			start = html.querySelector('a[alt="last page"]');
+		if (isNum) {
+			limit = parseInt(query, 10);
+			query = 'all';
+			start = (limit-1)*20;
+			$('scanProgress').max = start;
+			$('current').update(start+20 + ' posts remaining ');
+			$('current').up('p').style.color = "";
+			$('start').enable();
 
-			if (html.querySelectorAll('span.thumb').length) {
-				$('total').up('p').style.color = "";
-				$('start').enable();
-
-				start = parseInt((start && start.getAttribute('href').split("pid=").last()) || '1', 10);
-				$('total').update(start);
-				$$('progress')[0].max = start;
-				$('current').update('0');
-			} else {
-				$('current').update('Nothing ');
-				$('total').update(' found');
-				$('total').up('p').style.color = "#FF0000";
+			if (limit === 0) {
 				$('start').disable();
 			}
-		});
+		} else {
+			query = query || 'all';
+			getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query, function (html) {
+				start = html.querySelector('a[alt="last page"]');
+
+				if (html.querySelectorAll('span.thumb').length) {
+					$('current').up('p').style.color = "";
+					$('start').enable();
+
+					start = parseInt((start && start.getAttribute('href').split("pid=").last()) || '1', 10);
+					$('scanProgress').max = start;
+					$('current').update(start + ' posts remaining ');
+				} else {
+					$('current').update('Nothing found');
+					$('current').up('p').style.color = "#FF0000";
+					$('start').disable();
+				}
+			});
+
+		}
 	};
 
 	$('scanTags').onchange();
@@ -617,15 +703,19 @@ function postPage() {
 				}, br1);
 			}
 		});
-		if (BAPopts.solo && taglist.length == 1 && taglist[0].textContent.trim() != 'solo') {
-			if (!$$('.customTag').some(function (ct) {
-					var ctli = ct.up('li');
-					if (~ctli.textContent.split(/\s+/).indexOf('solo')) {
-						ctli.style.backgroundColor = 'rgba(0,255,0,0.25)';
-						return true;
-					}
-				})) {
-				inserTag({text: 'solo'}, br1);
+		if (BAPopts.solo) {
+			var taglistString = taglist.join(' ');
+			if ((taglist.length == 1 && taglist[0].textContent.trim() != 'solo') ||
+				(taglist.length == 2 && !~taglistString.indexOf('solo') && ~taglistString.indexOf('tagme'))) {
+				if (!$$('.customTag').some(function (ct) {
+						var ctli = ct.up('li');
+						if (~ctli.textContent.split(/\s+/).indexOf('solo')) {
+							ctli.style.backgroundColor = 'rgba(0,255,0,0.25)';
+							return true;
+						}
+					})) {
+					inserTag({text: 'solo'}, br1);
+				}
 			}
 		}
 		new Insertion.After($$('a.aAdd').last().up('li'), '<br>');
@@ -717,10 +807,8 @@ function inserTag(tag, where) {
 			}
 		}
 	} else {
-		where.next().down('.editField').onkeydown = function (event) {
-			if (event.keyCode == 13) {
-				applyEdit(this);
-			}
+		where.next().down('.editField').onchange = function (event) {
+			applyEdit(this);
 		};
 		where.next().down('.editField').id = 'newTag';
 		where.next().down('.editField').onfocus = function () {
@@ -740,7 +828,7 @@ function showButton() {
 		return;
 	}
 
-	new Insertion.Before($$('div#tag_list ul strong')[0], '<input id="btnSubmit" type="submit" value="submit"><br><br>');
+	new Insertion.Before($$('div#tag_list ul strong')[0], '<input style="width:64%; height:1.5rem;" id="btnSubmit" type="submit" value="submit"><br><br>');
 	$('btnSubmit').onclick = function () {
 		mySubmit();
 	};
@@ -1101,9 +1189,8 @@ function historyPage() {
 	});
 }
 
-// todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru
+// todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru or when the tag is "_"
 // todo: tag categories?
 // todo: fix increasing whitespace above image stats after submitting tags
-// todo: add new tag either by onblur or with a mouse button
-// todo: larger buttons/fields
 // todo: linkify users in comment section
+// todo: crop and autocontrast by tags
