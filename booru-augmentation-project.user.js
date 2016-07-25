@@ -26,7 +26,7 @@ var pages = {
 		}
 	},
 	'alias':                    aliasPage,
-	'comment':                  linkify,
+	'comment':                  commentPage,
 	'forum':                    {
 		'view': linkify
 	},
@@ -162,7 +162,7 @@ function removeTagme(offset) {
 
 		var ilinks = html.querySelectorAll('.content .thumb > a');
 
-		$A(ilinks).forEach(function (v) {
+		$A(ilinks).forEach(function (v, i) {
 			if (failure) return false;
 			setTimeout(function(){
 				getPage(v.href, function (html2) {
@@ -177,7 +177,7 @@ function removeTagme(offset) {
 							onComplete: function () {
 								completed++;
 								if (completed >= ilinks.length && next) {
-									setTimeout(function(){removeTagme(next)}, 500 + Math.random()*1000);
+									setTimeout(function(){removeTagme(next)}, 500);
 								}
 							},
 							onFailure:  function () {
@@ -187,9 +187,9 @@ function removeTagme(offset) {
 								$('removeTagme').enable();
 							}
 						});
-					}, 500+Math.random*1000);
+					}, 333);
 				})
-			}, 500+Math.random()*2000);
+			}, 500+500*i);
 		});
 	})
 }
@@ -324,13 +324,17 @@ function showScanner() {
 
 			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
 
-			tags.forEach(function (span) {
-				tag = span.querySelector('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
-				window.taglist[tag] = Number(span.textContent.split(/\s+/).last());
-				BAPtags[tag] = window.taglist[tag];
+			tags.forEach(function (span) {	
+				tag = span.querySelector('a').href;
+				tag = tag && tag.split('tags=')[1];
+				if (tag) {
+					tag = decodeURIComponent(tag).replace(/\"|\'/g, '');
+					window.taglist[tag] = Number(span.textContent.split(/\s+/).last());
+					BAPtags[tag] = window.taglist[tag];
+				}
 			});
 
-			if (Object.keys(BAPtags).length && ((offset / 20) % 2)) {
+			if (Object.keys(BAPtags).length) {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 			}
 
@@ -488,8 +492,14 @@ function storeTags() {
 	BAPtags = Object.keys(BAPtags).length && BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	tags.each(function (span) {
-		var tag = span.down('a').textContent.trim().replace(/\s+/g, '_').replace(/\"|\'/g, '');
-		BAPtags[tag] = Number(span.textContent.split(/\s+/).last());
+
+		var tag = span.down('a').href;
+		
+		tag = tag && tag.split('tags=')[1];
+		if (tag) {
+			tag = decodeURIComponent(tag).replace(/\"|\'/g, '');
+			BAPtags[tag] = Number(span.textContent.split(/\s+/).last());
+		}
 	});
 
 	newtags = JSON.stringify(BAPtags);
@@ -558,9 +568,9 @@ function listPage() {
 	storeTags();
 
 	if (!posts.length && ~document.location.href.indexOf('tags=')) {
-		var t = document.location.href.split('tags=')[1].split('+');
+		var t = (document.location.href.split('tags=')[1] || '').split('+');
 
-		if (t.length == 1) {
+		if (t.length == 1 && t[0]) {
 			delete BAPtags[t[0]];
 			if (Object.keys(BAPtags).length) {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
@@ -575,12 +585,10 @@ function listPage() {
 			}
 			var s = li.down('span');
 			var a = li.down('a');
-			var query = s.down('a').textContent;
+			var query = s.down('a').href.split('&tags=')[1];
 
-			if (~query.indexOf(' ')) {
-				query = query.replace(/\s+/g, '_');
-			} else {
-				query = 'booru ' + query;
+			if (query) {
+				s.down('a').update(decodeURIComponent(query));
 			}
 
 			if (a && a.textContent == '+') {
@@ -679,13 +687,15 @@ function postPage() {
 	var taglist = $$('div#tag_list li a');
 
 	taglist.each(function (tagli) {
-		if (!tagli.textContent.trim()) {
-			return false;
+		var taghref = tagli.href.split('&tags=')[1];
+
+		if (tagli.textContent.trim() || (taghref && ~taghref.indexOf('_'))) {
+
+			inserTag({
+				text: decodeURIComponent(taghref),
+				num:  tagli.up('span').textContent.split(' ').last()
+			}, tagli.up('li'));
 		}
-		inserTag({
-			text: tagli.textContent.trim().replace(/\s+/g, '_'),
-			num:  tagli.up('span').textContent.split(' ').last()
-		}, tagli.up('li'));
 	});
 
 	var br1 = $$('div#tag_list br')[0];
@@ -774,11 +784,11 @@ function inserTag(tag, where) {
 	if (tag.text && !tag.num) { //custom tag
 		aAdd = aAdd.replace('style="display:none;"', 'style=""');
 		tagLink = '<span class="customTag">' + tag.text + '</span>';
-	} else if (!tag.text) { //new tag
+	} else if (!tag.text) { //new tag input
 		tagLink = tagLink.replace('style=""', 'style="display:none;"');
 		editField = editField.replace('style="display:none;"', 'style=""');
 	} else { //existing tag
-		tagLink = tagLink.replace('&tags=', '&tags=' + tag.text.replace(/\s+/g, '_')).replace('></', '>' + tag.text.replace(/_/g, ' ') + '</');
+		tagLink = tagLink.replace('&tags=', '&tags=' + encodeURIComponent(tag.text)).replace('></', '>' + tag.text + '</');
 		aEdit = aEdit.replace('style="display:none;"', 'style=""');
 		aDelete = aDelete.replace('style="display:none;"', 'style=""');
 	}
@@ -909,7 +919,7 @@ function addTag(that) {
 	that.hide();
 	that.next('.aEdit').show();
 	that.next('.aDelete').show();
-	that.next('span.customTag').replace('<a href="index.php?page=post&s=list&tags=' + tag + '">' + tag.replace(/_/g, ' ') + '</a>');
+	that.next('span.customTag').replace('<a href="index.php?page=post&s=list&tags=' + encodeURIComponent(tag) + '">' + tag + '</a>');
 	$('tags').value += ' ' + tag;
 	BAPtags[tag] = Number(BAPtags[tag] || 0) + 1;
 
@@ -928,7 +938,7 @@ function isANSI(s) {
 }
 
 function applyEdit(that) {
-	var value = that.value.trim().replace(/\s+/g, '_').toLowerCase();
+	var value = that.value.trim().replace(/\s/g, '_').toLowerCase();
 	if (!value) {
 		if (that.id != 'newTag') {
 			exclude(that);
@@ -939,13 +949,13 @@ function applyEdit(that) {
 	var existing = $$('#tag_list ul > li > span > a:not([class])');
 	var element;
 	var exists = existing.some(function (tag) {
-		if (tag.textContent.trim().replace(/\s+/g, '_') == value) {
+		if (tag.textContent.trim().replace(/\s/g, '_') == value) {
 			element = tag;
 
 			return true;
 		}
 	});
-	var oldTag = that.previous('a').textContent.trim().replace(/\s+/g, '_') || '';
+	var oldTag = that.previous('a').textContent.trim().replace(/\s/g, '_') || '';
 
 	if (exists && (value != oldTag)) {
 		element.up('li').style.backgroundColor = 'rgba(255,255,0,0.5)';
@@ -965,13 +975,11 @@ function applyEdit(that) {
 	} else {
 		that.style['backgroundColor'] = '';
 	}
-
-	value = encodeURIComponent(value);
-
 	var link = that.previous('span > a');
+	link.textContent = value;
 
-	link.href = 'index.php?page=post&s=list&tags=' + value;
-	link.textContent = value.replace(/_/g, ' ');
+	link.href = 'index.php?page=post&s=list&tags=' + encodeURIComponent(value);
+
 	link.show();
 	that.hide();
 
@@ -983,7 +991,7 @@ function applyEdit(that) {
 	link.previous('.aEdit').show();
 	link.next('.aDelete').show();
 
-	$('tags').value = ($('tags').value.replace(oldTag, '') + ' ' + value.replace(/\s+/g, '_')).replace(/\s+/g, ' ');
+	$('tags').value = ($('tags').value.replace(oldTag, '') + ' ' + value.replace(/\s/g, '_')).replace(/\s+/g, ' ');
 
 	if (oldTag != value) {
 		var currentNum = that.up('span').lastChild;
@@ -1054,6 +1062,24 @@ function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
 				(tag && BAPtags[tag.toLowerCase()] ? ' (' + BAPtags[tag.toLowerCase()] + ')' : "");
 		}
 	})
+}
+
+function commentPage() {
+
+	var commentsData = $$('ul.post-info');
+	
+	$A(commentsData).forEach(function (el) {
+		var user = el.childNodes[2].textContent.split(':')[1].trim();
+		
+		var userlink = user == 'Anonymous' ?
+				'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' :
+			'<a href="index.php?page=account_profile&uname=' + user + '">' + user + '</a>';
+		el.removeChild(el.childNodes[2]);
+		new Insertion.Before(el.childNodes[2], '<li>user:'+userlink+'</li>');
+	
+	});
+
+	linkifyContainer('div.body,div[id^="cbody"] > p');
 }
 
 function linkify() {
@@ -1189,8 +1215,6 @@ function historyPage() {
 	});
 }
 
-// todo: fix rare bug when a tag is considered as custom because it shows on an image that's the only one with that tag on the booru or when the tag is "_"
+// todo: fix increasing whitespace above image stats after submitting tags 
 // todo: tag categories?
-// todo: fix increasing whitespace above image stats after submitting tags
-// todo: linkify users in comment section
 // todo: crop and autocontrast by tags
