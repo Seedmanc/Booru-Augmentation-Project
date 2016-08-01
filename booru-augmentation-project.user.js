@@ -148,23 +148,23 @@ function optionsPage() {
 function removeTagme(offset) {
 	getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=tagme&pid=' + offset, function (html) {
 		var failure = false;
-		$('rttProgress').value = offset || 1;
 		var total = html.querySelector('a[alt="last page"]'), completed = 0;
 		var next = html.querySelector('a[alt="next"]');
+		var ilinks = html.querySelectorAll('.content .thumb > a');
+
+		$('rttProgress').value = offset || 1;
 
 		next = (next && next.getAttribute('href').split("pid=").last()) || 0;
-
 		total = (total && total.getAttribute('href').split("pid=").last()) || 0;
 
 		if (offset === 0) {
 			$('rttProgress').max = total || 1;
 		}
 
-		var ilinks = html.querySelectorAll('.content .thumb > a');
-
 		$A(ilinks).forEach(function (v, i) {
 			if (failure) return false;
 			setTimeout(function(){
+
 				getPage(v.href, function (html2) {
 					if (failure) return false;
 					var form = html2.querySelector('#edit_form');
@@ -173,11 +173,15 @@ function removeTagme(offset) {
 					form.pconf.value = 1;
 
 					setTimeout(function(){
+						if (failure) return false;
 						form.request({
 							onComplete: function () {
+								if (failure) return false;
 								completed++;
+								$('rttProgress').value++;
+
 								if (completed >= ilinks.length && next) {
-									setTimeout(function(){removeTagme(next)}, 500);
+									setTimeout(function(){removeTagme(next);}, 2000);
 								}
 							},
 							onFailure:  function () {
@@ -187,11 +191,11 @@ function removeTagme(offset) {
 								$('removeTagme').enable();
 							}
 						});
-					}, 333);
-				})
-			}, 500+500*i);
+					}, 1333);
+				});
+			}, 3000+3000*i);
 		});
-	})
+	});
 }
 //TODO sequential execution in case of booru limitations
 
@@ -291,7 +295,7 @@ function showScanner() {
 					a.href = reader.result;
 					a.click();
 					a.parentNode.removeChild(a);
-				}
+				};
 			}
 		}
 	};
@@ -324,7 +328,7 @@ function showScanner() {
 
 			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
 
-			tags.forEach(function (span) {	
+			tags.forEach(function (span) {
 				tag = span.querySelector('a').href;
 				tag = tag && tag.split('tags=')[1];
 				if (tag) {
@@ -469,7 +473,7 @@ function showTags() {
 	}).each(function (tag) {
 		if (BAPtags.hasOwnProperty(tag)) {
 			if (BAPtags[tag] < 1) {
-				delete BAPtags[tag]
+				delete BAPtags[tag];
 			} else {
 				new Insertion.Bottom(allTags, '<tr><td' + (BAPtags[tag] < 5 ? ' style="background-color:rgba(255,255,0,0.33);"' : '') + '><a href="index.php?page=post&s=list&tags=' + tag + '">' + tag + '</a></td><td>' + BAPtags[tag] + '</td></tr>');
 			}
@@ -536,7 +540,7 @@ function searchField() {
 
 function enableDatalist(that) {
 	if (that.value.length >= 1) {
-		that.setAttribute('list', 'datags')
+		that.setAttribute('list', 'datags');
 	} else {
 		that.removeAttribute('list');
 	}
@@ -815,7 +819,7 @@ function inserTag(tag, where) {
 			if (event.keyCode == 13) {
 				this.blur();
 			}
-		}
+		};
 	} else {
 		where.next().down('.editField').onchange = function (event) {
 			applyEdit(this);
@@ -826,7 +830,7 @@ function inserTag(tag, where) {
 		};
 		where.next().down('.editField').oninput = function () {
 			enableDatalist(this);
-		}
+		};
 	}
 	if (tag.text && ~where.textContent.indexOf(tag.text.replace(/_/g, ' '))) {
 		where.parentNode.removeChild(where);
@@ -905,7 +909,7 @@ function mySubmit() {
 function toggleFitIn(that) {
 	//TODO this really needs improvement, CSS
 	if (that.getAttribute('style')) {
-		that.setAttribute('style', '')
+		that.setAttribute('style', '');
 	} else {
 		that.setAttribute('style', 'max-width:90000px !important;');
 	}
@@ -1061,7 +1065,7 @@ function aliasPage() { // idea by Usernam, how it's actually done by Seedmanc
 			td.innerHTML = "<a href='index.php?page=post&s=list&tags=" + tag + "'>" + tag + "</a>" +
 				(tag && BAPtags[tag.toLowerCase()] ? ' (' + BAPtags[tag.toLowerCase()] + ')' : "");
 		}
-	})
+	});
 }
 
 function commentPage() {
@@ -1072,7 +1076,7 @@ function commentPage() {
 		var user = el.childNodes[2].textContent.split(':')[1].trim();
 		
 		var userlink = user == 'Anonymous' ?
-				'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' :
+			'<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>' :
 			'<a href="index.php?page=account_profile&uname=' + user + '">' + user + '</a>';
 		el.removeChild(el.childNodes[2]);
 		new Insertion.Before(el.childNodes[2], '<li>user:'+userlink+'</li>');
@@ -1201,7 +1205,7 @@ function historyPage() {
 		}
 
 		if (tags2.length > tags1.length) {
-			tr.select('td')[0].style.backgroundColor = 'red'
+			tr.select('td')[0].style.backgroundColor = 'red';
 		} else if (tags2.length < tags1.length) {
 			tr.select('td')[0].style.backgroundColor = 'green';
 		}
