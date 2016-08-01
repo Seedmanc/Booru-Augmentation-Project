@@ -151,21 +151,23 @@ function removeTagme(offset) {
 		var total = html.querySelector('a[alt="last page"]'), completed = 0;
 		var next = html.querySelector('a[alt="next"]');
 		var ilinks = html.querySelectorAll('.content .thumb > a');
+		var rttProgress = $('rttProgress');
 
-		$('rttProgress').value = offset || 1;
+		rttProgress.value = offset || 1;
 
 		next = (next && next.getAttribute('href').split("pid=").last()) || 0;
 		total = (total && total.getAttribute('href').split("pid=").last()) || 0;
 
 		if (offset === 0) {
-			$('rttProgress').max = total || 1;
+			$('rttProgress').max = total || 20;
 		}
 
 		$A(ilinks).forEach(function (v, i) {
 			if (failure) return false;
+
 			setTimeout(function(){
 
-				getPage(v.href, function (html2) {
+				getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=view&id=' + v.id.replace('p',''), function (html2) {
 					if (failure) return false;
 					var form = html2.querySelector('#edit_form');
 
@@ -178,17 +180,19 @@ function removeTagme(offset) {
 							onComplete: function () {
 								if (failure) return false;
 								completed++;
-								$('rttProgress').value++;
+								rttProgress.value++;
 
 								if (completed >= ilinks.length && next) {
 									setTimeout(function(){removeTagme(next);}, 2000);
+								} else if (!next) {
+									rttProgress.max = rttProgress.value;
 								}
 							},
 							onFailure:  function () {
 								console.log('error removing tagme at post ' + v.href);
-								$('removeTagme').style.color = 'red';
-								failure=true;
-								$('removeTagme').enable();
+								rttProgress.style.color = 'red';
+								failure = true;
+								rttProgress.enable();
 							}
 						});
 					}, 1333);
