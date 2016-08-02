@@ -21,9 +21,7 @@ var BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "
 var pages = {
 	'account-options':          optionsPage,
 	'account':                  {
-		'profile': function () {
-			document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
-		}
+		'profile': profilePage
 	},
 	'alias':                    aliasPage,
 	'comment':                  commentPage,
@@ -32,8 +30,8 @@ var pages = {
 	},
 	'history&type=tag_history': historyPage,
 	'post':                     {
-		'view': postPage,
-		'list': listPage
+		'list': listPage,
+		'view': postPage
 	}
 };
 var currentBooru = document.location.host.split('.')[0];
@@ -50,7 +48,7 @@ if (~document.location.href.indexOf('s=search_image')) {
 
 	frame.src = 'http://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/image_search/index.html?booru=' + currentBooru;
 	frame.width = "100%";
-	frame.height = "95%";
+	frame.height = "96%";
 	document.body.appendChild(frame);
 
 } else if (!~document.location.href.indexOf('s=mass_upload')) {
@@ -107,11 +105,15 @@ function main() {
 	}
 }
 
+function profilePage() {
+	document.location.href = document.location.href.replace('account&s=profile', 'account_profile');
+}
+
 function optionsPage() {
 	delete Array.prototype.toJSON;
 	var table = $$('div.option table tbody')[0];
 	var submit = $$('div.option input[type="submit"]')[0];
-	BAPtags = Object.keys(BAPtags).length && BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
+	BAPtags = BAPtags && Object.keys(BAPtags).length || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	new Insertion.Bottom(table, '<tr style="text-align:center;"><td colspan=2><br><b>Booru Augmentation Project</b></td></tr>');
 	new Insertion.Bottom(table, '<tr><td><div style="float:left; text-align:justify;"><label class="block" for="ansiOnly">Disallow Unicode tags</label><p>Do not accept non-ANSI tags when editing tags in-place</p></div><div style="float:right"><br><input class="BAPoption" id="ansiOnly" type="checkbox"/></td></tr>');
@@ -128,13 +130,8 @@ function optionsPage() {
 		}
 	});
 
-	$('showTags').onchange = function () {
-		showTags();
-	};
-
-	$('showScanner').onchange = function () {
-		showScanner();
-	};
+	$('showTags').onchange = showTags
+	$('showScanner').onchange = showScanner;
 
 	submit.onclick = function () {
 		$$('input.BAPoption').each(function (el) {
@@ -152,6 +149,7 @@ function removeTagme(offset) {
 		var next = html.querySelector('a[alt="next"]');
 		var ilinks = html.querySelectorAll('.content .thumb > a');
 		var rttProgress = $('rttProgress');
+		var delay = 3000;
 
 		rttProgress.value = offset || 1;
 
@@ -171,7 +169,7 @@ function removeTagme(offset) {
 					if (failure) return false;
 					var form = html2.querySelector('#edit_form');
 
-					form.tags.value = form.tags.value.replace(/^tagme | tagme$| tagme /i,' ');
+					form.tags.value = form.tags.value.replace(/^tagme | tagme$| tagme /i, ' ');
 					form.pconf.value = 1;
 
 					setTimeout(function(){
@@ -179,25 +177,27 @@ function removeTagme(offset) {
 						form.request({
 							onComplete: function () {
 								if (failure) return false;
+								
 								completed++;
 								rttProgress.value++;
 
 								if (completed >= ilinks.length && next) {
-									setTimeout(function(){removeTagme(next);}, 2000);
+									setTimeout(function(){removeTagme(next);}, delay/2);
 								} else if (!next) {
 									rttProgress.max = rttProgress.value;
 								}
 							},
 							onFailure:  function () {
 								console.log('error removing tagme at post ' + v.href);
+								
 								rttProgress.style.color = 'red';
 								failure = true;
 								rttProgress.enable();
 							}
 						});
-					}, 1333);
+					}, delay/3);
 				});
-			}, 3000+3000*i);
+			}, delay*(i+1));
 		});
 	});
 }
@@ -211,9 +211,10 @@ function getPage(url, callback) {
 	new Ajax.Request(url, {
 		method:    'get',
 		onSuccess: function (xhr) {
-			var tmplt = document.createElement('template');
+			var tmplt = document.createElement('template'), html;
+			
 			tmplt.innerHTML = xhr.responseText;
-			var html = (tmplt.content || tmplt);
+			html = (tmplt.content || tmplt);
 
 			if (typeof callback == 'function') {
 				callback(html);
@@ -223,6 +224,7 @@ function getPage(url, callback) {
 }
 
 function showScanner() {
+	var table, Current = 0, start = 0;
 
 	if ($('allTags')) {
 		$('allTags').up('.option').hide();
@@ -236,7 +238,7 @@ function showScanner() {
 
 	new Insertion.After($$('form > p')[0],
 		'<div class="option" style="float:right; height:0; left:740px; position:absolute;"><table id="scanner" class="" style="width:680px; margin-bottom:0;"><thead><tr><th colspan=2><center>Booru scanner</center></th></tr></thead><tbody></tbody></table></div>');
-	var table = $$('#scanner tbody')[0], Current = 0, start = 0;
+	table = $$('#scanner tbody')[0];
 
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block">Limit scope to query:</label><br>&nbsp;</td><td style="width:100%; "><input style="width:99%;padding:0;" type="text" name="tag" id="scanTags" placeholder="tag list or a # of pages to scan"/></td></tr>');
@@ -284,16 +286,27 @@ function showScanner() {
 			var scanQuery = $('scanTags').value.trim();
 			var isNum = scanQuery && /^\d+$/.test(scanQuery);
 
-			a.download = evt.target.id.replace('list', ' list for ' + (scanQuery ? (isNum ? (scanQuery + ' posts @ ') : ('\'' + scanQuery + '\' @ ')) : '') + currentBooru + 'booru' + isNum ? '' : (', ' + (start - Current) + ' of ' + start + ' posts scanned')) + '.json';
+			a.download = evt.target.id.replace('list', ' list for ' + (scanQuery ? 
+					(isNum ? 
+						(scanQuery + ' posts @ ') : 
+						('\'' + scanQuery + '\' @ ')
+					) : 
+					'')
+				+ currentBooru + 'booru' + isNum ? 
+					'' : 
+					(', ' + (start - Current) + ' of ' + start + ' posts scanned')
+				) + '.json';
 			document.body.appendChild(a);
 
 			if (typeof URL != 'undefined') {
 				var fileURL = URL.createObjectURL(b);
+				
 				a.href = fileURL;
 				a.click();
 				a.parentNode.removeChild(a);
 			} else {
 				var reader = new window.FileReader();
+				
 				reader.readAsDataURL(b);
 				reader.onloadend = function () {
 					a.href = reader.result;
@@ -326,15 +339,17 @@ function showScanner() {
 		}
 
 		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
+			var tags, ilinks, next;
+			
 			Current = offset;
 			$('current').update(Current + ' posts remaining ');
 			$('scanProgress').value = start - Current;
 
-			var tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
-
+			tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
 			tags.forEach(function (span) {
 				tag = span.querySelector('a').href;
 				tag = tag && tag.split('tags=')[1];
+				
 				if (tag) {
 					tag = decodeURIComponent(tag).replace(/\"|\'/g, '');
 					window.taglist[tag] = Number(span.textContent.split(/\s+/).last());
@@ -346,8 +361,7 @@ function showScanner() {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 			}
 
-			var ilinks = html.querySelectorAll('.content .thumb > a');
-
+			ilinks = html.querySelectorAll('.content .thumb > a');
 			$A(ilinks).forEach(function (v) {
 				var id = v.id.replace('p', '');
 				var data = v.querySelector('img').title.trim();
@@ -356,11 +370,11 @@ function showScanner() {
 				var rating = data.split('rating:')[1].split('')[0].toLowerCase();
 				var src = v.querySelector('img').src;
 				var ext = src.split('.').last();
-				window.thumblist.push(src);
-				window.linklist.push(src.replace('thumbs', 'img').replace('thumbnails', 'images').replace('thumbnail_', ''));
-
 				var hash = src.split('thumbnail_')[1].split('.')[0];
 				var cluster = src.split('thumbnail')[1].replace(/\/+|s/g, '');
+				
+				window.thumblist.push(src);
+				window.linklist.push(src.replace('thumbs', 'img').replace('thumbnails', 'images').replace('thumbnail_', ''));
 				window.postlist[hash] = {
 					c: Number(cluster),
 					e: ext,
@@ -371,7 +385,7 @@ function showScanner() {
 				};
 			});
 
-			var next = html.querySelector('a[alt="back"]');
+			next = html.querySelector('a[alt="back"]');
 			next = (next && next.getAttribute('href').split("pid=").last()) || '';
 
 			if (next && start) {
@@ -386,7 +400,6 @@ function showScanner() {
 				Object.keys(window.taglist).sort().forEach(function (key) {
 					temp[key] = window.taglist[key];
 				});
-
 				window.taglist = temp;
 
 				if ((Object.keys(window.taglist).length) && (query == 'all') && !isNum) {
@@ -441,7 +454,6 @@ function showScanner() {
 	};
 
 	$('scanTags').onchange();
-
 }
 
 function showTags() {
@@ -473,6 +485,7 @@ function showTags() {
 	Object.keys(BAPtags).sort(function (a, b) {
 		a = BAPtags[a];
 		b = BAPtags[b];
+		
 		return a == b ? 0 : ((b - a) / Math.abs(b - a));
 	}).each(function (tag) {
 		if (BAPtags.hasOwnProperty(tag)) {
@@ -500,7 +513,6 @@ function storeTags() {
 	BAPtags = Object.keys(BAPtags).length && BAPtags || JSON.parse(localStorage.getItem('BAPtags') || '{}');
 
 	tags.each(function (span) {
-
 		var tag = span.down('a').href;
 		
 		tag = tag && tag.split('tags=')[1];
@@ -552,13 +564,14 @@ function enableDatalist(that) {
 
 function markTags(li) {
 	var q = li.textContent.trim().split(/\s+/);
+	var q1 = q[q.length - 1];;
 
 	if (~q.indexOf('tagme') && BAPopts.tagme) {
 		li.style.backgroundColor = 'rgba(255,0,0,0.25)';
 	}
-	var q1 = q[q.length - 1];
 	if (isNaN(q1) || q1 >= 5) {
 		li.down('span').style.color = "#A0A0A0";
+		
 		return;
 	}
 	if (q1 <= 1) {
@@ -566,6 +579,7 @@ function markTags(li) {
 	} else {
 		li.style.backgroundColor = "rgba(255,255,0,0.33)";
 	}
+	
 	li.down('span').style.color = "#000";
 }
 
@@ -580,6 +594,7 @@ function listPage() {
 
 		if (t.length == 1 && t[0]) {
 			delete BAPtags[t[0]];
+			
 			if (Object.keys(BAPtags).length) {
 				localStorage.setItem('BAPtags', JSON.stringify(BAPtags));
 			}
@@ -616,39 +631,33 @@ function listPage() {
 	} else {
 		return;
 	}
+}
 
+function pagination () {
 	var paginator = $('paginator');
-
-	if (!paginator.down('a[alt="first page"]') || !paginator.down('a[alt="next"]')) {
-		return;
-	}
-
-	var current = paginator.down('b');
-	var contents = paginator.immediateDescendants().without(paginator.down('script'));
-
-	if (contents.length < 15) {
-		return;
-	}
-
-	var pos = contents.indexOf(current);
-
-	if (pos >= 7) {
-		return;
-	}
-
-	if ((contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href)) {
-		return;
-	}
-
-	var pid;
-
-	pid = ~document.location.search.indexOf('pid=') ? document.location.search.split('&').findAll(function (el) {
-		return ~el.indexOf('pid');
-	})[0].replace('pid=', '') : 0;
-
+	var current = paginator && paginator.down('b');
+	var contents = paginator && paginator.immediateDescendants().without(paginator.down('script'));
+	var pos = contents && contents.indexOf(current);
 	var shift = Math.min(current.textContent - 2, 4);
 	var newPos = paginator.down('a:not([alt])', shift);
 	var next = current.next();
+	var pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
+	var pid;
+	
+	if (!paginator.down('a[alt="first page"]')|| 
+		!paginator.down('a[alt="next"]')  || 
+		contents.length < 15 || pos >= 7) ||
+		(contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href)
+	) {
+		return;
+	}
+
+	pid = ~document.location.search.indexOf('pid=') ? 
+		document.location.search.split('&').findAll(function (el) {
+			return ~el.indexOf('pid');
+		})[0].replace('pid=', '') : 
+		0;
+
 
 	if (next == newPos) {
 		next = current;
@@ -656,8 +665,6 @@ function listPage() {
 		paginator.insertBefore(current, newPos);
 	}
 	paginator.insertBefore(newPos, next);
-
-	var pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
 
 	for (var i = 0; i < pageLinks.length; i++) {
 		pageLinks[i].textContent = pid / 20 - shift + i;
@@ -670,6 +677,7 @@ function listPage() {
 
 function postPage() {
 	var image = $('image');
+	var taglist = $$('div#tag_list li a');
 
 	storeTags();
 
@@ -691,8 +699,6 @@ function postPage() {
 	image.onclick = function () {
 		toggleFitIn(this);
 	};
-
-	var taglist = $$('div#tag_list li a');
 
 	taglist.each(function (tagli) {
 		var taghref = tagli.href.split('&tags=')[1];
