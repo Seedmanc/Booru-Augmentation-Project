@@ -245,7 +245,7 @@ function showScanner() {
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block">Initiate scanning</label><br>&nbsp;</td><td style="text-align:center; width:100%; "><input type="button" style="width:100%;" id="start" value="Start"/></td></tr>');
 	new Insertion.Bottom(table,
-		'<tr><td><label class="block">Scan progress</label><p style="margin:0"><span id="current">' + Current + ' posts remaining </span><span id="time" style="display:none;">, &nbsp;time left: <span id="timeValue"/></span></p></td>\
+		'<tr><td><label class="block">Scan progress</label><p style="margin:0"><span id="current">' + Current + ' posts remaining</span><span id="time" style="display:none;">, &nbsp;time left: <span id="timeValue"/></span></p></td>\
 		<td style="vertical-align:middle; width:100%;"><progress id="scanProgress" style="width:100%;" value="' + Current + '" max="' + start + '"></progress></td></tr>');
 	new Insertion.Bottom(table,
 		'<tr><td><label class="block"><br>Download results in .json</label><p>Incomplete until scanning finishes</p></td><td style="width:100%; "><table id="dllinks" class="highlightable" style="font-weight:bold;width:100%; text-align:center;">\
@@ -339,13 +339,13 @@ function showScanner() {
 		}
 
 		getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=' + query + '&pid=' + offset, function (html) {
-			var tags, ilinks, next;
+			var tags, ilinks, next, tag, temp = {};
 			
 			Current = offset;
-			$('current').update(Current + ' posts remaining ');
+			$('current').update(Current + ' posts remaining');
 			$('scanProgress').value = start - Current;
 
-			tags = $A(html.querySelectorAll('#tag_list ul li span')), tag, temp = {};
+			tags = $A(html.querySelectorAll('#tag_list ul li span'));
 			tags.forEach(function (span) {
 				tag = span.querySelector('a').href;
 				tag = tag && tag.split('tags=')[1];
@@ -424,7 +424,7 @@ function showScanner() {
 			query = 'all';
 			start = (limit-1)*20;
 			$('scanProgress').max = start;
-			$('current').update(start+20 + ' posts remaining ');
+			$('current').update(start+20 + ' posts remaining');
 			$('current').up('p').style.color = "";
 			$('start').enable();
 
@@ -442,7 +442,7 @@ function showScanner() {
 
 					start = parseInt((start && start.getAttribute('href').split("pid=").last()) || '1', 10);
 					$('scanProgress').max = start;
-					$('current').update(start + ' posts remaining ');
+					$('current').update(start + ' posts remaining');
 				} else {
 					$('current').update('Nothing found');
 					$('current').up('p').style.color = "#FF0000";
@@ -624,10 +624,11 @@ function listPage() {
 
 			if (s.childNodes[0].textContent == '? ') {
 				s.childNodes[0].textContent = ' ';
-				new Insertion.Before(s.childNodes[0], '<a style="color:#58c;" href="https://www.google.com/search?q=' + query + '" target="_blank">?</a>');
+				new Insertion.Before(s.childNodes[0], '<a style="color:#a0a0a0; text-decoration: underline;" href="https://www.google.com/search?q=' + query + '" target="_blank">?</a>');
 			}
 			markTags(li);
 		});
+		pagination();
 	} else {
 		return;
 	}
@@ -641,7 +642,7 @@ function pagination () {
 	var shift = Math.min(current.textContent - 2, 4);
 	var newPos = paginator.down('a:not([alt])', shift);
 	var next = current.next();
-	var pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
+	var pageLinks;
 	var pid;
 	
 	if (!paginator.down('a[alt="first page"]')|| 
@@ -666,6 +667,8 @@ function pagination () {
 		paginator.insertBefore(current, newPos);
 	}
 	paginator.insertBefore(newPos, next);
+
+	pageLinks = document.querySelectorAll('div#paginator > a:not([alt]), div#paginator > b');
 
 	for (var i = 0; i < pageLinks.length; i++) {
 		pageLinks[i].textContent = pid / 20 - shift + i;
@@ -1175,31 +1178,31 @@ function linkifyTextNode(node) {
 function historyPage() {
 	var regexp = /([\S]+)/g;
 
-	var table = $$('.highlightable')[0];
+	var table = $('history');
 	table.style = "width: 100%; table-layout: auto;";
 
-	table.select('th').each(function (th) {
+	$$('#history th').each(function (th) {
 		th.removeAttribute("width");
 	});
 
 // Delta
-	table.select('th')[0].textContent = '∆';
+	table.down('th:nth-of-type(1)').textContent = '∆';
 
 // Tags
-	table.select('th')[4].style.width = "100%";
+	table.down('th:nth-of-type(5)').style.width = "100%";
 
 // Options
-	table.select('th')[5].textContent = 'Undo';
+	table.down('th:nth-of-type(6)').textContent = 'Undo';
 
-	var rows = table.select('tr:not(:first-of-type)');
+	var rows = $$('#history tr:not(:first-of-type)');
 
-	rows.each(function (tr, i) { // it's that simple
-		var tdTags = tr.select('td')[4];
+	rows.each(function (tr, i) {
+		var tdTags = tr.down('td:nth-of-type(5)');
 
-		tr.select('td')[2].style = "white-space: nowrap;";
+		tr.down('td:nth-of-type(3)').style = "white-space: nowrap;";
 
 		var tags1 = tdTags.textContent.trim().split(' ');
-		var tags2 = rows[i + 1] ? rows[i + 1].select('td')[4].textContent.trim().split(' ') : tags1;
+		var tags2 = rows[i + 1] ? rows[i + 1].down('td:nth-of-type(5)').textContent.trim().split(' ') : tags1;
 
 		var addTags = tags1.filter(function (el) {
 			return !~tags2.indexOf(el);
@@ -1207,9 +1210,12 @@ function historyPage() {
 		var delTags = tags2.filter(function (el) {
 			return !~tags1.indexOf(el);
 		});
-		var sameTags = tags1.intersect(tags2);
+		var sameTags = tags1.filter(function(n) {
+			return tags2.indexOf(n) != -1;
+		});
 
-		var usernam = tr.select("td")[3];
+
+		var usernam = tr.down('td:nth-of-type(4)');
 		if (usernam.textContent == "Anonymous") {
 			usernam.innerHTML = '<a href="index.php?page=post&s=list&tags=user%3AAnonymous">Anonymous</a>';
 		} else {
@@ -1217,9 +1223,9 @@ function historyPage() {
 		}
 
 		if (tags2.length > tags1.length) {
-			tr.select('td')[0].style.backgroundColor = 'red';
+			tr.down('td:nth-of-type(1)').style.backgroundColor = 'red';
 		} else if (tags2.length < tags1.length) {
-			tr.select('td')[0].style.backgroundColor = 'green';
+			tr.down('td:nth-of-type(1)').style.backgroundColor = 'green';
 		}
 
 		// this needs testing for tags with weird characters inside, although you shouldn't be having those anyway
