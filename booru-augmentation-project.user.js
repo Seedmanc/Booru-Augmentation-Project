@@ -154,10 +154,10 @@ function removeTagme(offset) {
 		rttProgress.value = offset || 1;
 
 		next = (next && next.getAttribute('href').split("pid=").last()) || 0;
-		total = (total && total.getAttribute('href').split("pid=").last()) || 0;
+		total = (total && total.getAttribute('href').split("pid=").last()) || 20;
 
 		if (offset === 0) {
-			$('rttProgress').max = total || 20;
+			$('rttProgress').max = total;
 		}
 
 		$A(ilinks).forEach(function (v, i) {
@@ -183,7 +183,7 @@ function removeTagme(offset) {
 
 								if (completed >= ilinks.length && next) {
 									setTimeout(function(){removeTagme(next);}, delay/2);
-								} else if (!next) {
+								} else if (completed >= ilinks.length) {
 									rttProgress.max = rttProgress.value;
 								}
 							},
@@ -1229,6 +1229,6 @@ function historyPage() {
 	});
 }
 
-// todo: fix increasing whitespace above image stats after submitting tags 
 // todo: tag categories?
 // todo: crop and autocontrast by tags
+// todo: store post data internally and reuse it in image search
