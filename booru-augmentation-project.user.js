@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name		Booru Augmentation Project
 // @description	Enhance your basic booru experience
-// @version		1.0.9
+// @version		1.1
 // @author		Seedmanc
 // @include		http://*.booru.org/*index.php?page=post*
 // @include		http://*.booru.org/*index.php?page=alias*
