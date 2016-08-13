@@ -1,4 +1,4 @@
-﻿﻿// ==UserScript==
+﻿// ==UserScript==
 // @name		Booru Augmentation Project
 // @description	Enhance your basic booru experience
 // @version		1.0.9
@@ -646,7 +646,8 @@ function pagination () {
 	
 	if (!paginator.down('a[alt="first page"]')|| 
 		!paginator.down('a[alt="next"]')  || 
-		contents.length < 15 || pos >= 7) ||
+		contents.length < 15 ||
+		pos >= 7 ||
 		(contents.last().href == contents.last().previous('a:not([alt])').href) && (contents.first().href == contents.first().next('a:not([alt])').href)
 	) {
 		return;
@@ -876,6 +877,7 @@ function mySubmit() {
 
 			br.parentNode.removeChild(br);
 			spinner.parentNode.removeChild(spinner);
+			btnSubmit.parentNode.removeChild(btnSubmit.previous('br'));
 			btnSubmit.parentNode.removeChild(btnSubmit);
 
 			var taglist;
