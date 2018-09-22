@@ -40,7 +40,7 @@ function removeTagme(offset) {
 	
 	$('rttError').textContent = '';
 		
-	getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=tagme&pid=' + offset, function (html) {
+	getPage('https://' + currentBooru + '.booru.org/index.php?page=post&s=list&tags=tagme&pid=' + offset, function (html) {
 		var total = html.querySelector('a[alt="last page"]'), completed = 0;
 		var next = html.querySelector('a[alt="next"]');
 		var ilinks = html.querySelectorAll('.content .thumb > a');
@@ -63,7 +63,7 @@ function removeTagme(offset) {
 
 			var t = setTimeout(function(){
 
-				getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=view&id=' + v.id.replace('p',''), function (html2) {
+				getPage('https://' + currentBooru + '.booru.org/index.php?page=post&s=view&id=' + v.id.replace('p',''), function (html2) {
 					if (failure) {
 						processError(v);
 						return false;
@@ -178,7 +178,7 @@ function showScanner() {
 			<p style="width:100%; text-align:justify;">For example, here is how you can search for duplicating images at your booru:</p><ol><li>Get the complete post DB by hash and the list of links to thumbnails.</li>\
 				<li>DL all thumbs by feeding the list to some mass downloader</li>\
 				<li>Run a duplicate finder software on the thumbs, moving all dupes to a folder</li>\
-				<li>Open the hash db and the found images in the <a target="_blank" href="http://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
+				<li>Open the hash db and the found images in the <a target="_blank" href="https://'+currentBooru+'.booru.org/index.php?page=post&s=search_image"><b>Image Search</b></a> to get links to posts on booru that have duplicating images</li></ol><br>\
 			Note: in Chrome the amount of pictures opened simulaneously might be quite limited by their collective filename length. You can open a folder of images instead.\
 		</tbody></table></div>');
 
@@ -271,7 +271,7 @@ function showScanner() {
 			}
 		} else {
 			query = query || 'all';
-			getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list' + (query ? '&tags=' + query : ''), function (html) {
+			getPage('https://' + currentBooru + '.booru.org/index.php?page=post&s=list' + (query ? '&tags=' + query : ''), function (html) {
 				start = html.querySelector('a[alt="last page"]');
 
 				if (html.querySelectorAll('span.thumb').length) {
@@ -304,7 +304,7 @@ function scanPage(offset) {
 		query = 'all';
 	}
 
-	getPage('http://' + currentBooru + '.booru.org/index.php?page=post&s=list' + (query ? '&tags=' + query : '') + '&pid=' + offset, function (html) {
+	getPage('https://' + currentBooru + '.booru.org/index.php?page=post&s=list' + (query ? '&tags=' + query : '') + '&pid=' + offset, function (html) {
 		var tags, ilinks, next, tag, temp = {};
 		
 		Current = offset;

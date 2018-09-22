@@ -160,17 +160,17 @@
 					</td>
 					<td class="tags">
 						<div class="tags-container">
-							<a ng-repeat="tag in image.tags" href="http://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}" target="_blank">{{tag}} </a>
+							<a ng-repeat="tag in image.tags" href="https://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}" target="_blank">{{tag}} </a>
 						</div>
 					</td>
 					<td>{{image.tags.length}}</td>
 					<td>{{image.score}}</td>
 					<td>{{image.ext}}</td>
 					<td><a target="_blank"
-					       href="http://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
+					       href="https://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
 					</td>
 					<td><a target="_blank"
-					       href="http://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
+					       href="https://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
 						<img ng-src="{{image.pic}}"/></a>
 					</td>
 				</tr>
@@ -205,18 +205,18 @@
 				<tr ng-repeat="image in imagesOdd | orderBy:orderByField:reverseSort track by $index "
 				    class="text-center">
 					<td><a target="_blank"
-					       href="http://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
+					       href="https://img.booru.org/{{booruName}}/images/{{image.cluster}}/{{image.hash.join('')}}.{{image.ext}}">
 						<img ng-src="{{image.pic}}"/></a>
 					</td>
 					<td><a target="_blank"
-					       href="http://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
+					       href="https://{{booruName+'.booru.org/index.php?page=post&s=view&id='+image.post}}">{{image.post}}</a>
 					</td>
 					<td>{{image.ext}}</td>
 					<td>{{image.score}}</td>
 					<td>{{image.tags.length}}</td>
 					<td class="tags">
 						<div class="tags-container">
-							<a ng-repeat="tag in image.tags" href="http://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}"
+							<a ng-repeat="tag in image.tags" href="https://{{booruName}}.booru.org/index.php?page=post&s=list&tags={{tag}}"
 						                               target="_blank">{{tag}} </a>
 						</div>
 					</td>
