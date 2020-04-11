@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name		Booru Augmentation Project
 // @description	Enhance your basic booru experience
-// @version		1.1.1
+// @version		1.1.2
 // @author		Seedmanc
 // @include		https://*.booru.org/*index.php?page=post*
 // @include		https://*.booru.org/*index.php?page=alias*
@@ -32,7 +32,7 @@ var pages = {
         'view': postPage
     }
 };
-var hosting = 'https://rawgit.com/Seedmanc/Booru-Augmentation-Project/master/';
+var hosting = 'https://seedmanc.github.io/Booru-Augmentation-Project/';
 
 window.BAPtags = {};
 window.BAPopts = JSON.parse(localStorage.getItem('BAPopts') || '{"ansiOnly":true, "solo":true, "tagme":true}');
